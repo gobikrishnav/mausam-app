@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MAUSAM</string>
+    <string name="title_activity_main">MAUSAM</string>
+    <string name="package_name">in.gov.imd.mausam</string>
+    <string name="custom_url_scheme">in.gov.imd.mausam</string>
+</resources>
