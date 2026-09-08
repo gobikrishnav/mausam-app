@@ -17,7 +17,6 @@ import {
 import { useAppStore } from '../../store/useAppStore';
 import { DEFAULT_INDIAN_LOCATIONS, searchLocations, reverseGeocodeGps } from '../../services/weatherApi';
 import { SavedLocation } from '../../types';
-import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
 
 export const ImdHeader: React.FC = () => {
   const navigate = useNavigate();

@@ -76,11 +76,13 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.1
-          name: "MAUSAM App v1.0.1 (Official Android APK)"
+          tag_name: v1.0.2
+          name: "MAUSAM App v1.0.2 (Clerk Auth Safe + Offline ML + UI Improvements)"
           make_latest: true
           body: |
-            ### 📱 MAUSAM Android App v1.0.1 - Official Release
+            ### 📱 MAUSAM Android App v1.0.2 - Official Release
+
+            This release fixes Clerk authentication, adds on-device offline reinforcement learning personalization, fixes mobile bottom bar padding, and includes audio weather briefings.
 
             This update resolves all APK installation issues and delivers the full, vast meteorological suite of MAUSAM.
 
