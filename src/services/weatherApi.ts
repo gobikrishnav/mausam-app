@@ -67,6 +67,52 @@ export const DEFAULT_INDIAN_LOCATIONS: SavedLocation[] = [
   { id: 'punjab_farm', name: 'Ludhiana Farm', region: 'Punjab', country: 'India', latitude: 30.9010, longitude: 75.8573, type: 'farm' },
 ];
 
+export interface DiscoverLocationItem extends SavedLocation {
+  category: 'hill_stations' | 'coastal' | 'pilgrimage' | 'agriculture' | 'cyclone_zones';
+  tag: string;
+  elevationMeters?: number;
+  highlight: string;
+}
+
+export const DISCOVER_LOCATIONS_CATALOG: DiscoverLocationItem[] = [
+  // Hill Stations
+  { id: 'shimla', name: 'Shimla', region: 'Himachal Pradesh', country: 'India', latitude: 31.1048, longitude: 77.1734, type: 'travel', category: 'hill_stations', tag: 'Alpine Ridge', elevationMeters: 2276, highlight: 'Cool mountain air, occasional winter snowfall' },
+  { id: 'manali', name: 'Manali', region: 'Himachal Pradesh', country: 'India', latitude: 32.2396, longitude: 77.1887, type: 'travel', category: 'hill_stations', tag: 'Valley of Gods', elevationMeters: 2050, highlight: 'Beas river valley, high UV index at altitude' },
+  { id: 'ooty', name: 'Ooty (Udhagamandalam)', region: 'Tamil Nadu', country: 'India', latitude: 11.4102, longitude: 76.6950, type: 'travel', category: 'hill_stations', tag: 'Nilgiri Queen', elevationMeters: 2240, highlight: 'Temperate eucalyptus microclimate, morning mist' },
+  { id: 'darjeeling', name: 'Darjeeling', region: 'West Bengal', country: 'India', latitude: 27.0410, longitude: 88.2663, type: 'travel', category: 'hill_stations', tag: 'Tea Highlands', elevationMeters: 2042, highlight: 'Kanchenjunga vistas, monsoonal cloud sea' },
+  { id: 'munnar', name: 'Munnar', region: 'Kerala', country: 'India', latitude: 10.0889, longitude: 77.0595, type: 'travel', category: 'hill_stations', tag: 'Western Ghats', elevationMeters: 1600, highlight: 'High biodiversity zone, torrential monsoon' },
+  { id: 'leh', name: 'Leh Ladakh', region: 'Ladakh', country: 'India', latitude: 34.1526, longitude: 77.5771, type: 'travel', category: 'hill_stations', tag: 'Cold Desert', elevationMeters: 3500, highlight: 'Sub-zero winters, intense solar radiation' },
+
+  // Coastal & Beaches
+  { id: 'goa', name: 'Goa (Panaji)', region: 'Goa', country: 'India', latitude: 15.4909, longitude: 73.8278, type: 'travel', category: 'coastal', tag: 'Arabian Sea', highlight: 'Maritime humidity, southwest monsoon surges' },
+  { id: 'kovalam', name: 'Kovalam Beach', region: 'Kerala', country: 'India', latitude: 8.4021, longitude: 76.9787, type: 'travel', category: 'coastal', tag: 'Malabar Surf', highlight: 'INCOIS wave swell monitoring, coastal squall' },
+  { id: 'puri', name: 'Puri Coast', region: 'Odisha', country: 'India', latitude: 19.8135, longitude: 85.8312, type: 'travel', category: 'coastal', tag: 'Bay of Bengal', highlight: 'Golden beach surf, maritime moisture' },
+  { id: 'digha', name: 'Digha', region: 'West Bengal', country: 'India', latitude: 21.6266, longitude: 87.5074, type: 'travel', category: 'coastal', tag: 'Bengal Coast', highlight: 'Flat shallow beach, high tidal fluctuation' },
+  { id: 'havelock', name: 'Havelock (Swaraj Dweep)', region: 'Andaman & Nicobar', country: 'India', latitude: 11.9761, longitude: 92.9876, type: 'travel', category: 'coastal', tag: 'Island Coral Reef', highlight: 'Equatorial tropical marine weather' },
+  { id: 'kanyakumari', name: 'Kanyakumari', region: 'Tamil Nadu', country: 'India', latitude: 8.0883, longitude: 77.5385, type: 'travel', category: 'coastal', tag: 'Tri-Sea Confluence', highlight: 'Cape Comorin strong gusty winds' },
+
+  // Pilgrimage & Spiritual
+  { id: 'varanasi', name: 'Varanasi', region: 'Uttar Pradesh', country: 'India', latitude: 25.3176, longitude: 82.9739, type: 'travel', category: 'pilgrimage', tag: 'Holy Ganga Basin', highlight: 'Ghat morning fog, humid subtropical climate' },
+  { id: 'tirupati', name: 'Tirupati', region: 'Andhra Pradesh', country: 'India', latitude: 13.6288, longitude: 79.4192, type: 'travel', category: 'pilgrimage', tag: 'Seshachalam Hills', highlight: 'Eastern Ghats sacred hills weather' },
+  { id: 'kedarnath', name: 'Kedarnath Dham', region: 'Uttarakhand', country: 'India', latitude: 30.7352, longitude: 79.0669, type: 'travel', category: 'pilgrimage', tag: 'Mandakini Valley', elevationMeters: 3583, highlight: 'Rapid mountain weather changes & snow alerts' },
+  { id: 'amritsar', name: 'Amritsar', region: 'Punjab', country: 'India', latitude: 31.6340, longitude: 74.8723, type: 'travel', category: 'pilgrimage', tag: 'Golden Temple', highlight: 'Semi-arid plains, winter dense fog hazard' },
+  { id: 'haridwar', name: 'Haridwar / Rishikesh', region: 'Uttarakhand', country: 'India', latitude: 29.9457, longitude: 78.1642, type: 'travel', category: 'pilgrimage', tag: 'Foothills Portal', highlight: 'Himalayan transition zone rainfall' },
+  { id: 'madurai', name: 'Madurai', region: 'Tamil Nadu', country: 'India', latitude: 9.9252, longitude: 78.1198, type: 'travel', category: 'pilgrimage', tag: 'Meenakshi Temple', highlight: 'Warm inland tropical climate' },
+
+  // Agriculture & Plantation Belts
+  { id: 'ludhiana', name: 'Ludhiana', region: 'Punjab', country: 'India', latitude: 30.9010, longitude: 75.8573, type: 'farm', category: 'agriculture', tag: 'Wheat-Paddy Belt', highlight: 'Meghdoot agro-advisory hub, frost warnings' },
+  { id: 'nashik', name: 'Nashik', region: 'Maharashtra', country: 'India', latitude: 19.9975, longitude: 73.7898, type: 'farm', category: 'agriculture', tag: 'Wine & Onion Capital', highlight: 'Micro-irrigation & grape mildew tracking' },
+  { id: 'vidarbha', name: 'Nagpur / Vidarbha', region: 'Maharashtra', country: 'India', latitude: 21.1458, longitude: 79.0882, type: 'farm', category: 'agriculture', tag: 'Cotton & Soybean', highlight: 'Dry spells & heatwave stress monitoring' },
+  { id: 'jorhat', name: 'Jorhat (Assam)', region: 'Assam', country: 'India', latitude: 26.7509, longitude: 94.2037, type: 'farm', category: 'agriculture', tag: 'Brahmaputra Tea', highlight: 'High humidity, heavy pre-monsoon showers' },
+  { id: 'guntur', name: 'Guntur', region: 'Andhra Pradesh', country: 'India', latitude: 16.3067, longitude: 80.4365, type: 'farm', category: 'agriculture', tag: 'Spices & Chilli Belt', highlight: 'Krishna delta farming climate' },
+
+  // Cyclone & Disaster Zones
+  { id: 'paradip', name: 'Paradip Port', region: 'Odisha', country: 'India', latitude: 20.3165, longitude: 86.6114, type: 'travel', category: 'cyclone_zones', tag: 'Cyclone Landfall Zone', highlight: 'High storm surge vulnerability, Doppler radar zone' },
+  { id: 'cherrapunji', name: 'Cherrapunji (Sohra)', region: 'Meghalaya', country: 'India', latitude: 25.2702, longitude: 91.7323, type: 'travel', category: 'cyclone_zones', tag: 'Global Rain Record', elevationMeters: 1430, highlight: 'Orographic monsoonal cloud funneling' },
+  { id: 'joshimath', name: 'Joshimath', region: 'Uttarakhand', country: 'India', latitude: 30.5574, longitude: 79.5663, type: 'travel', category: 'cyclone_zones', tag: 'Landslide Alert Zone', elevationMeters: 1890, highlight: 'Geological slope stability precipitation alerts' },
+  { id: 'rameswaram', name: 'Rameswaram Island', region: 'Tamil Nadu', country: 'India', latitude: 9.2876, longitude: 79.3129, type: 'travel', category: 'cyclone_zones', tag: 'Palk Strait Cyclone Alley', highlight: 'High tidal surge & coastal gale hazard' },
+];
+
 /**
  * Fetch Open-Meteo weather data
  */

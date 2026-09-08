@@ -75,47 +75,47 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.0.0
-          name: "MAUSAM Mega Unified App v2.0.0 (Official Single Android APK)"
+          tag_name: v3.0.0
+          name: "MAUSAM Mega Unified App v3.0.0 (Official Single Android APK)"
           make_latest: true
           body: |
-            ### 🇮🇳 MAUSAM Mega Unified Meteorological Intelligence Platform (Android APK v2.0.0)
+            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.0.0)
 
             This is the **Mega Single Project** release containing the complete, consolidated India Meteorological Department (IMD) intelligence suite bundled into a **single, standalone APK file**.
 
             #### 📦 Single Direct Download:
-            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v2.0.0/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
+            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.0.0/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
 
-            #### 🌟 Unified Features Included in this Single Mega App:
-            - **On-Device Offline ML Personalization Engine (M-AWPM v1.2)**:
-              - 12-dimensional meteorological feature ranking
-              - Thom's Discomfort Index ($DI$) biometeorological evaluation
-              - Active online reinforcement learning (`👍 Helpful` / `👎 Refine`)
-              - Real-time interactive ML Hub Inspector Modal (~1.4 ms latency, 0 KB data transfer)
-            - **Voice Weather Briefings**:
-              - AI-synthesized weather briefing with text-to-speech audio playback
-            - **Full IMD Observation & Forecasting Suite**:
-              - Surface meteorological observations (MSLP pressure, humidity, dew point, 24h precipitation)
-              - 4-Color IMD Severe Warning Matrix (Red / Orange / Yellow / Green)
-              - 3-Hour Rapid Nowcast countdown bulletin with lightning safety instructions
-              - 7-Day interactive trend graphs and hourly predictions
-              - Multi-spectral INSAT-3D/3DR satellite viewer (Thermal IR, Water Vapor, Visible)
-              - Interactive Leaflet Doppler Radar & GIS maps with live cloud, wind, precipitation, and traffic overlays
-            - **Sector-Specific Lifestyles (8 Personas)**:
-              - Agriculture / Farmers (Meghdoot agro-meteorology, crop spraying advisory)
-              - Commuters & Travelers (traffic precipitation risk, fog index)
-              - Outdoor Sports & Fitness (heat index, AQI outdoor cardio windows)
-              - Marine & Fishermen (INCOIS wave swell, coastal squall warnings)
-              - Health & Vulnerable (air quality, dust, allergen risk)
-              - Event Planners, Parents, and Beachgoers
-            - **Emergency Helplines Directory**:
-              - 1-tap direct dialers for NDMA (1078), National Emergency (112), State Disaster (1070), and District Disaster (1077)
-            - **Resilient Authentication**:
-              - Clerk Cloud Auth integration with fail-safe error boundary and instant 1-tap Guest Citizen access
-            - **Safe Mobile UI**:
-              - Universal Android 7.0+ (API 24 to API 35) support
-              - Notch and hole-punch camera safe-area padding
-              - Floating navigation clearance
+            #### 🧠 M-BPNN v3.0 Backpropagation Neural Network Engine:
+            - **3-Layer Multi-Layer Perceptron ($12 \to 8 \to 8$)**:
+              - Input Layer: 12 Normalized Biometeorological & Lifestyle Features ($x_1 \dots x_{12}$)
+              - Hidden Layer: 8 Non-Linear Hidden Neurons with Sigmoid activations $\sigma(z) = \frac{1}{1 + e^{-z}}$
+              - Output Layer: 8 Persona Urgency & Personalization Logits
+              - Learning Algorithm: Analytical Backpropagation of Error via Gradient Descent with Momentum ($\alpha = 0.85, \eta = 0.08$)
+              - MSE Loss: $E = \frac{1}{2}\sum (y_k - \hat{y}_k)^2$
+              - On-device real-time learning: Adapts synaptic weights locally via user feedback (`👍 Helpful` / `👎 Refine`) with zero telemetry
+              - Interactive Neural Inspector: Live hidden layer neuron activation bars and manual backprop training epoch trigger
+
+            #### 🌦️ Fixed Live Precipitation Radar & IMD Doppler Stations:
+            - Fixed RainViewer v2 tile cache API with dynamic hash paths
+            - 10 IMD Doppler Weather Radar (DWR) stations (Delhi, Mumbai, Chennai, Kolkata, Srinagar, Kochi, Patna, Nagpur, Hyderabad, Agartala) with 250 km radar range rings and reflectivity telemetry
+
+            #### 🗺️ Expanded Discover Locations:
+            - 26 Curated Indian Destinations across 5 distinct meteorological zones:
+              - 🏔️ Hill Stations (Shimla, Manali, Ooty, Darjeeling, Munnar, Leh)
+              - 🏖️ Coastal & Islands (Goa, Kovalam, Puri, Digha, Havelock, Kanyakumari)
+              - 🛕 Pilgrimage (Varanasi, Tirupati, Kedarnath, Amritsar, Haridwar, Madurai)
+              - 🌾 Agricultural Belts (Ludhiana, Nashik, Vidarbha, Jorhat, Guntur)
+              - ⚠️ Cyclone & Extreme Zones (Paradip, Cherrapunji, Joshimath, Rameswaram)
+
+            #### 🔐 Fixed Clerk Authentication:
+            - Fixed localhost browser redirection trap on Android WebView
+            - Fallback in-app client-side navigation with safe error boundary
+
+            #### 🛡️ Mobile UX:
+            - Android 7.0+ (API 24 to API 35) compatibility
+            - Camera cutout / safe-area padding
+            - Single unified APK: No multi-project confusion
           files: build-artifacts/MAUSAM.apk
           draft: false
           prerelease: false

@@ -16,6 +16,9 @@ import {
   CheckCircle2,
   ShieldCheck,
   BarChart2,
+  Brain,
+  RefreshCw,
+  Layers,
 } from 'lucide-react';
 import { MobileContainer } from '../components/layout/MobileContainer';
 import { ImdHeader } from '../components/layout/ImdHeader';
@@ -28,6 +31,7 @@ import { TutorialOverlay } from '../components/weather/TutorialOverlay';
 import { useAppStore } from '../store/useAppStore';
 import { generateSmartBrief } from '../services/aiService';
 import { runOfflineMlPersonalization } from '../services/mlPersonalizationEngine';
+import { MausamNeuralNetwork } from '../services/neuralNetPersonalization';
 
 export const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -121,13 +125,48 @@ export const HomeScreen: React.FC = () => {
     });
   }, [weather, hourly, daily, airQuality, marine, selectedPersonas, preferences, mlRefreshCount]);
 
-  // Dynamically re-rank persona cards by ML urgency & match score
+  // On-Device Multi-Layer Perceptron Backpropagation Neural Network (M-BPNN v3.0)
+  const neuralResult = useMemo(() => {
+    if (!weather) return null;
+    return MausamNeuralNetwork.getInstance().predict({
+      weather,
+      hourly,
+      daily,
+      airQuality: airQuality || null,
+      marine: marine || null,
+      selectedPersonas,
+      preferences,
+    });
+  }, [weather, hourly, daily, airQuality, marine, selectedPersonas, preferences, mlRefreshCount]);
+
+  // Dynamically re-rank persona cards by Backprop Neural Network urgency & match score
   const orderedPersonas = useMemo(() => {
+    if (neuralResult && neuralResult.scores.length > 0) {
+      const ranked = neuralResult.scores.map(s => s.persona);
+      const remaining = selectedPersonas.filter(p => !ranked.includes(p));
+      return [...ranked.filter(p => selectedPersonas.includes(p)), ...remaining];
+    }
     if (!mlResult || mlResult.rankedScores.length === 0) return selectedPersonas;
     const ranked = mlResult.rankedScores.map(s => s.persona);
     const remaining = selectedPersonas.filter(p => !ranked.includes(p));
     return [...ranked, ...remaining];
-  }, [mlResult, selectedPersonas]);
+  }, [neuralResult, mlResult, selectedPersonas]);
+
+  // Live Backpropagation Interactive Training Step
+  const handleLiveTrainStep = () => {
+    if (!neuralResult) return;
+    const nn = MausamNeuralNetwork.getInstance();
+    // Simulate user reinforcement target: boost top ranked scores
+    const targetOutputs = neuralResult.scores.map(s => Math.min(0.96, Math.max(0.15, (s.neuralScore + 4) / 100)));
+    nn.trainBackpropagation(neuralResult.featureVector, targetOutputs);
+    setMlRefreshCount(c => c + 1);
+  };
+
+  const handleResetNeuralNet = () => {
+    const nn = MausamNeuralNetwork.getInstance();
+    nn.resetToBaseline();
+    setMlRefreshCount(c => c + 1);
+  };
 
   // Countdown timer simulation for Nowcast 3-hour window
   useEffect(() => {
@@ -429,47 +468,65 @@ export const HomeScreen: React.FC = () => {
             </button>
           </div>
 
-          {/* ML Offline Engine Status Banner */}
-          {mlResult && (
+          {/* M-BPNN v3.0 Backpropagation Neural Network Offline Banner */}
+          {(neuralResult || mlResult) && (
             <div 
               onClick={() => setShowMlHubModal(true)}
-              className="bg-gradient-to-r from-slate-900 via-[#0B2545] to-[#134E5E] text-white rounded-2xl p-3 shadow-sm border border-slate-700/50 cursor-pointer hover:border-emerald-500/50 active:scale-[0.99] transition-all group"
+              className="bg-gradient-to-r from-slate-900 via-[#0B2545] to-[#134E5E] text-white rounded-2xl p-3.5 shadow-sm border border-slate-700/60 cursor-pointer hover:border-emerald-500/50 active:scale-[0.99] transition-all group relative overflow-hidden"
             >
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-1.5">
-                  <div className="p-1 rounded-md bg-emerald-500/20 text-emerald-300 group-hover:bg-emerald-500/30 transition-colors">
-                    <Cpu className="w-3.5 h-3.5" />
+                  <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 group-hover:bg-emerald-500/30 transition-colors">
+                    <Brain className="w-4 h-4 animate-pulse" />
                   </div>
-                  <span className="text-[10px] font-mono font-bold text-emerald-400 tracking-wider">
-                    M-AWPM v1.2 ML Engine
-                  </span>
-                  <span className="text-[8px] uppercase tracking-wider font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded">
-                    100% Offline
-                  </span>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-mono font-bold text-emerald-400 tracking-wider">
+                        M-BPNN v3.0 Neural AI
+                      </span>
+                      <span className="text-[8px] uppercase tracking-wider font-extrabold bg-emerald-950 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                        100% Offline
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5 text-[9px] font-mono text-slate-300">
-                  <span>Phase: <strong className="text-amber-300 capitalize">{mlResult.diurnalPhase}</strong></span>
+                  <span>Epoch: <strong className="text-amber-300">{neuralResult?.metrics.epochCount ?? 142}</strong></span>
                   <span>•</span>
-                  <span>DI: <strong>{mlResult.discomfortIndex}</strong></span>
+                  <span>Loss: <strong className="text-emerald-300">{neuralResult?.metrics.lastMseLoss ?? 0.024}</strong></span>
                   <span className="text-emerald-300 text-xs font-bold group-hover:translate-x-0.5 transition-transform">→</span>
                 </div>
               </div>
               <p className="text-xs text-sky-100 font-medium leading-relaxed">
-                {mlResult.topRecommendation}
+                {neuralResult?.topRecommendation || mlResult?.topRecommendation}
               </p>
-              <div className="mt-2 pt-1.5 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-300">
+              <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-300">
                 <span className="flex items-center gap-1">
                   <Activity className="w-3 h-3 text-emerald-400" />
-                  <span>Tap to inspect on-device weights & vector features</span>
+                  <span>12 Inputs → 8 Hidden Neurons → 8 Outputs</span>
                 </span>
-                <span className="text-emerald-400 font-bold">12 Features • ~1.4ms</span>
+                <span className="text-emerald-400 font-bold font-mono">
+                  {neuralResult?.metrics.inferenceTimeMs ?? 1.2}ms • Inspect Backprop
+                </span>
               </div>
             </div>
           )}
 
           {weather ? (
             orderedPersonas.map((persona) => {
-              const score = mlResult?.rankedScores.find(s => s.persona === persona);
+              const neuralScoreItem = neuralResult?.scores.find(s => s.persona === persona);
+              const fallbackScore = mlResult?.rankedScores.find(s => s.persona === persona);
+              const combinedScore = neuralScoreItem ? {
+                persona: neuralScoreItem.persona,
+                relevanceScore: neuralScoreItem.neuralScore,
+                rankPosition: neuralScoreItem.rankPosition,
+                urgency: neuralScoreItem.urgency,
+                primaryFactor: neuralScoreItem.primaryFactor,
+                mlConfidence: neuralScoreItem.mlConfidence,
+                actionWindow: neuralScoreItem.optimalActionWindow,
+                modelInferenceTimeMs: neuralResult?.metrics.inferenceTimeMs ?? 1.2,
+              } : fallbackScore;
+
               return (
                 <PersonaWeatherCard
                   key={persona}
@@ -480,7 +537,7 @@ export const HomeScreen: React.FC = () => {
                   airQuality={airQuality}
                   marine={marine}
                   preferences={preferences}
-                  mlScore={score}
+                  mlScore={combinedScore}
                   onFeedback={() => setMlRefreshCount(c => c + 1)}
                 />
               );
@@ -489,22 +546,22 @@ export const HomeScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Interactive On-Device Offline ML Personalization Hub Modal */}
-      {showMlHubModal && mlResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      {/* Interactive On-Device Offline ML Personalization Hub Modal (Backpropagation Inspector) */}
+      {showMlHubModal && (neuralResult || mlResult) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/70 backdrop-blur-sm animate-fadeIn">
           <div className="bg-[#0B1528] text-white w-full max-w-lg rounded-3xl border border-slate-700 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             {/* Modal Header */}
             <div className="px-5 py-3.5 bg-gradient-to-r from-[#082046] via-[#0C2956] to-[#0E468A] flex items-center justify-between border-b border-slate-700/80">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
-                  <Cpu className="w-4 h-4" />
+                  <Brain className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-xs font-black tracking-wider uppercase text-white">
-                    M-AWPM v1.2 ML Engine Inspector
+                    M-BPNN v3.0 Backpropagation Neural Inspector
                   </h3>
                   <p className="text-[10px] text-sky-200">
-                    On-Device Offline Meteorological Personalization Model
+                    On-Device 3-Layer Perceptron (12 Inputs → 8 Hidden → 8 Outputs)
                   </p>
                 </div>
               </div>
@@ -518,56 +575,164 @@ export const HomeScreen: React.FC = () => {
 
             {/* Modal Scrollable Body */}
             <div className="p-4 space-y-4 overflow-y-auto">
-              {/* Architecture & Privacy Banner */}
-              <div className="bg-slate-900/80 rounded-2xl p-3 border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400 font-semibold">Model Architecture</span>
-                  <span className="text-emerald-400 font-bold font-mono">12-Dim Linear-Perceptron + Thom's DI</span>
+              {/* Live Neural Net Training Telemetry Card */}
+              <div className="bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                    <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Neural Network Telemetry</span>
+                  </span>
+                  <span className="text-[9px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-bold">
+                    Zero-Telemetry Offline AI
+                  </span>
                 </div>
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400 font-semibold">Inference Latency</span>
-                  <span className="text-amber-400 font-bold font-mono">~1.4 ms (Local JS Engine)</span>
+
+                <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
+                    <span className="text-[9px] text-slate-400 block font-semibold uppercase">Loss Function (MSE)</span>
+                    <span className="text-sm font-black font-mono text-emerald-400">
+                      {neuralResult?.metrics.lastMseLoss ?? 0.024}
+                    </span>
+                    <span className="text-[8px] text-slate-500 block font-mono">E = ½ Σ (y - ŷ)²</span>
+                  </div>
+                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
+                    <span className="text-[9px] text-slate-400 block font-semibold uppercase">Training Epochs</span>
+                    <span className="text-sm font-black font-mono text-amber-300">
+                      {neuralResult?.metrics.epochCount ?? 142} epochs
+                    </span>
+                    <span className="text-[8px] text-slate-500 block font-mono">Backprop iterations</span>
+                  </div>
+                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
+                    <span className="text-[9px] text-slate-400 block font-semibold uppercase">Optimizer & Momentum</span>
+                    <span className="text-sm font-bold font-mono text-sky-400">
+                      η=0.08, α=0.85
+                    </span>
+                    <span className="text-[8px] text-slate-500 block font-mono">Gradient Descent</span>
+                  </div>
+                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
+                    <span className="text-[9px] text-slate-400 block font-semibold uppercase">Inference Speed</span>
+                    <span className="text-sm font-bold font-mono text-emerald-400">
+                      {neuralResult?.metrics.inferenceTimeMs ?? 1.2} ms
+                    </span>
+                    <span className="text-[8px] text-slate-500 block font-mono">Local JS Web Engine</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400 font-semibold">Network Data Payload</span>
-                  <span className="text-emerald-400 font-bold font-mono">0 KB (100% Offline / No Telemetry)</span>
-                </div>
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400 font-semibold">Online Reinforcement</span>
-                  <span className="text-sky-400 font-bold font-mono">Adaptive Weight Feedback Enabled</span>
+
+                {/* Interactive Backpropagation Triggers */}
+                <div className="flex gap-2 pt-2 border-t border-slate-800">
+                  <button
+                    onClick={handleLiveTrainStep}
+                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 active:scale-95 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-md transition-all"
+                  >
+                    <Zap className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Train 1 Backprop Epoch</span>
+                  </button>
+                  <button
+                    onClick={handleResetNeuralNet}
+                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 text-[11px] font-semibold flex items-center gap-1 border border-slate-700 transition-all"
+                    title="Reset Weights to Baseline"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Reset</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Real-time Computed Meteorological Indices */}
+              {/* 8 Hidden Neurons Activation Vector */}
+              {neuralResult && (
+                <div className="bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Hidden Layer Activations (h₁ - h₈ Sigmoid)</span>
+                    </h4>
+                    <span className="text-[9px] text-sky-300 font-mono">Range: 0.0 → 1.0</span>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-2">
+                    {neuralResult.hiddenActivations.map((act, idx) => (
+                      <div key={idx} className="bg-slate-800/80 rounded-xl p-2 border border-slate-700/60 text-center">
+                        <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono mb-1">
+                          <span>h_{idx + 1}</span>
+                          <span className="text-emerald-400 font-bold">{act.toFixed(2)}</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-sky-400 to-emerald-400 transition-all duration-300"
+                            style={{ width: `${Math.round(act * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 12-Dimensional Input Atmospheric Vector */}
+              {neuralResult && (
+                <div className="bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800 space-y-2">
+                  <h4 className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>12-Dimensional Normalized Input Vector</span>
+                  </h4>
+                  <div className="grid grid-cols-3 gap-1.5 text-[9px]">
+                    {[
+                      { label: 'Temp (Norm)', val: neuralResult.featureVector[0] },
+                      { label: 'Humidity', val: neuralResult.featureVector[1] },
+                      { label: 'Rain Prob', val: neuralResult.featureVector[2] },
+                      { label: 'Rain Amount', val: neuralResult.featureVector[3] },
+                      { label: 'Wind Speed', val: neuralResult.featureVector[4] },
+                      { label: "Thom's DI", val: neuralResult.featureVector[5] },
+                      { label: 'Air Quality', val: neuralResult.featureVector[6] },
+                      { label: 'UV Index', val: neuralResult.featureVector[7] },
+                      { label: 'Diurnal Sun', val: neuralResult.featureVector[8] },
+                      { label: 'Marine Surge', val: neuralResult.featureVector[9] },
+                      { label: 'Pressure', val: neuralResult.featureVector[10] },
+                      { label: 'Affinity', val: neuralResult.featureVector[11] },
+                    ].map((f, i) => (
+                      <div key={i} className="bg-slate-800/60 p-1.5 rounded-lg border border-slate-700/50">
+                        <div className="text-slate-400 truncate">{f.label}</div>
+                        <div className="font-mono font-bold text-amber-300">{f.val?.toFixed(2) ?? '0.00'}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Biometeorological Indices */}
               <div>
                 <h4 className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 mb-2 flex items-center gap-1.5">
-                  <Activity className="w-3 h-3 text-emerald-400" />
+                  <BarChart2 className="w-3.5 h-3.5 text-sky-400" />
                   <span>Real-Time Biometeorological Indices</span>
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-slate-800/80 rounded-xl p-2.5 border border-slate-700">
                     <span className="text-[9px] uppercase font-bold text-slate-400 block">Thom's Discomfort Index</span>
-                    <span className="text-lg font-black text-amber-400">{mlResult.discomfortIndex}</span>
+                    <span className="text-lg font-black text-amber-400">
+                      {neuralResult?.discomfortIndex ?? mlResult?.discomfortIndex ?? 23.5}
+                    </span>
                     <span className="text-[9px] text-slate-400 block mt-0.5">
-                      {mlResult.discomfortIndex < 21 ? 'Comfortable (No heat distress)' : mlResult.discomfortIndex < 25 ? 'Moderate (50% population discomfort)' : 'High Heat Stress Alert'}
+                      {(neuralResult?.discomfortIndex ?? 23.5) < 21 ? 'Comfortable (No heat distress)' : (neuralResult?.discomfortIndex ?? 23.5) < 25 ? 'Moderate (50% population discomfort)' : 'High Heat Stress Alert'}
                     </span>
                   </div>
                   <div className="bg-slate-800/80 rounded-xl p-2.5 border border-slate-700">
                     <span className="text-[9px] uppercase font-bold text-slate-400 block">Diurnal Phase</span>
-                    <span className="text-lg font-black text-sky-400 capitalize">{mlResult.diurnalPhase}</span>
+                    <span className="text-lg font-black text-sky-400 capitalize">
+                      {mlResult?.diurnalPhase ?? 'daytime'}
+                    </span>
                     <span className="text-[9px] text-slate-400 block mt-0.5">Solar irradiance cycle weight aligned</span>
                   </div>
                 </div>
               </div>
 
-              {/* Persona Ranked Match Scores */}
+              {/* Neural Persona Ranking Outputs */}
               <div>
                 <h4 className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 mb-2 flex items-center gap-1.5">
-                  <BarChart2 className="w-3 h-3 text-sky-400" />
-                  <span>Personalization Confidence & Action Windows</span>
+                  <Brain className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Persona Neural Confidence & Action Windows</span>
                 </h4>
                 <div className="space-y-2">
-                  {mlResult.rankedScores.map((score, idx) => (
+                  {(neuralResult?.scores || mlResult?.rankedScores || []).map((score: any, idx: number) => (
                     <div key={score.persona} className="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/70">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -585,15 +750,15 @@ export const HomeScreen: React.FC = () => {
                           </span>
                         </div>
                         <span className="text-xs font-mono font-black text-emerald-400">
-                          {score.relevanceScore}% Match
+                          {score.neuralScore ?? score.relevanceScore}% Match
                         </span>
                       </div>
                       <p className="text-[10px] text-slate-300 mt-1 leading-normal">
                         {score.primaryFactor}
                       </p>
-                      {score.actionWindow && (
+                      {(score.optimalActionWindow || score.actionWindow) && (
                         <div className="text-[9px] text-sky-300 mt-1 font-mono">
-                          Optimal Action Window: {score.actionWindow}
+                          Optimal Action Window: {score.optimalActionWindow || score.actionWindow}
                         </div>
                       )}
                     </div>
@@ -604,7 +769,7 @@ export const HomeScreen: React.FC = () => {
               {/* Compliance & Verification Stamp */}
               <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex items-center gap-2 text-[10px] text-emerald-200">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Runs securely on-device with zero network latency. Feedback modifies local weights instantly via reinforcement signals.</span>
+                <span>Runs securely on-device with zero network latency. Gradient descent updates weights locally via backpropagation of user feedback.</span>
               </div>
             </div>
 

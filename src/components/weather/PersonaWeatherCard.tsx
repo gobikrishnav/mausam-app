@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { AirQualityData, CurrentWeather, DailyForecast, HourlyForecast, MarineData, PersonaPreferences, PersonaType } from '../../types';
 import { MlPersonaScore, recordMlFeedback } from '../../services/mlPersonalizationEngine';
+import { MausamNeuralNetwork } from '../../services/neuralNetPersonalization';
 
 interface PersonaCardProps {
   persona: PersonaType;
@@ -36,6 +37,7 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
   daily,
   airQuality,
   marine,
+  preferences,
   mlScore,
   onFeedback,
 }) => {
@@ -43,7 +45,26 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
   const [feedbackState, setFeedbackState] = React.useState<'helpful' | 'dismissed' | null>(null);
 
   const handleFeedback = (type: 'helpful' | 'dismissed') => {
+    // 1. Update traditional rule weights
     recordMlFeedback(persona, type);
+
+    // 2. Train Backpropagation Neural Network in real time (Gradient Descent)
+    try {
+      const nn = MausamNeuralNetwork.getInstance();
+      const { vector } = nn.extractFeatureVector({
+        weather,
+        hourly,
+        daily,
+        airQuality,
+        marine,
+        selectedPersonas: [persona],
+        preferences,
+      });
+      nn.recordFeedback(persona, type === 'helpful' ? 'helpful' : 'refine', vector);
+    } catch (e) {
+      console.warn('Neural backpropagation training notice:', e);
+    }
+
     setFeedbackState(type);
     if (onFeedback) onFeedback(persona, type);
   };

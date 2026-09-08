@@ -46,7 +46,12 @@ export const ClerkSafeProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   return (
     <ClerkErrorBoundary fallback={<>{children}</>}>
-      <ClerkProvider publishableKey={publishableKey} afterSignOutUrl="/">
+      <ClerkProvider 
+        publishableKey={publishableKey} 
+        signInFallbackRedirectUrl="/home"
+        signUpFallbackRedirectUrl="/home"
+        afterSignOutUrl="/"
+      >
         {children}
       </ClerkProvider>
     </ClerkErrorBoundary>

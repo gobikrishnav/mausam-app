@@ -1,4 +1,4 @@
-﻿import { useUser, useClerk } from '@clerk/react';
+import { useUser, useClerk } from '@clerk/react';
 
 export function useSafeClerk() {
   try {
@@ -10,8 +10,8 @@ export function useSafeClerk() {
       isLoaded: userContext.isLoaded,
       isSignedIn: userContext.isSignedIn,
       user: userContext.user,
-      openSignIn: () => clerk.openSignIn?.(),
-      openSignUp: () => clerk.openSignUp?.(),
+      openSignIn: (props?: any) => clerk.openSignIn?.(props),
+      openSignUp: (props?: any) => clerk.openSignUp?.(props),
       signOut: () => clerk.signOut?.(),
     };
   } catch (err) {
@@ -21,8 +21,8 @@ export function useSafeClerk() {
       isSignedIn: false,
       user: null,
       clerk: null,
-      openSignIn: undefined,
-      openSignUp: undefined,
+      openSignIn: undefined as ((props?: any) => void) | undefined,
+      openSignUp: undefined as ((props?: any) => void) | undefined,
       signOut: async () => {},
     };
   }

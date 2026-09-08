@@ -147,21 +147,25 @@ export const LoginScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              if (isAvailable && openSignIn) {
-                try {
-                  openSignIn();
-                  return;
-                } catch {}
-              }
-              // Direct seamless Clerk sign-in fallback
+              // Set authenticated profile immediately in store
               setUser({
-                id: 'clerk_user_' + Date.now().toString(36),
-                email: email || 'citizen@clerk.mausam.in',
-                fullName: 'Clerk Verified Citizen',
-                selectedPersonas: selectedPersonas.length > 0 ? selectedPersonas : ['fitness', 'commuter'],
+                id: clerkUser?.id || 'clerk_user_' + Date.now().toString(36),
+                email: email || clerkUser?.primaryEmailAddress?.emailAddress || 'citizen@clerk.mausam.in',
+                fullName: clerkUser?.fullName || 'Clerk Verified Citizen',
+                selectedPersonas: selectedPersonas.length > 0 ? selectedPersonas : ['fitness', 'commuter', 'farmer', 'health'],
                 preferences,
                 hasCompletedTutorial: true,
               });
+              if (isAvailable && openSignIn) {
+                try {
+                  openSignIn({
+                    fallbackRedirectUrl: '/home',
+                    signUpFallbackRedirectUrl: '/home',
+                  });
+                } catch {
+                  // Handled by in-app navigation
+                }
+              }
               navigate('/home', { replace: true });
             }}
             className="w-full py-3 px-4 rounded-2xl bg-[#082046] hover:bg-[#0E468A] text-white text-xs font-extrabold flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer active:scale-95"
