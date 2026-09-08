@@ -62,6 +62,9 @@ export function App() {
           <Route path="/auth/signup" element={<SignupScreen />} />
           <Route path="/auth/login" element={<LoginScreen />} />
           <Route path="/auth/forgot-password" element={<ForgotPasswordScreen />} />
+          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/signup" element={<SignupScreen />} />
+          <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
 
           {/* Main App Routes with Bottom Navigation */}
           <Route path="/home" element={<HomeScreen />} />

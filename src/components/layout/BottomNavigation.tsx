@@ -9,7 +9,7 @@ export const BottomNavigation: React.FC = () => {
   const unreadAlertsCount = useAppStore(state => state.unreadAlertsCount);
 
   // Hidden on onboarding, splash, and auth screens
-  const isHidden = ['/splash', '/onboarding', '/auth'].some(p => location.pathname.startsWith(p));
+  const isHidden = ['/splash', '/onboarding', '/auth', '/login', '/signup', '/forgot-password'].some(p => location.pathname.startsWith(p));
   if (isHidden) return null;
 
   const tabs = [
