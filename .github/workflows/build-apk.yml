@@ -52,12 +52,16 @@ jobs:
       - name: Build Android Release & Debug APKs with Gradle
         run: |
           cd android
-          ./gradlew assembleRelease assembleDebug --stacktrace
+          ./gradlew assembleDebug assembleRelease --stacktrace
 
       - name: Organize APK Artifacts
         run: |
           mkdir -p build-artifacts
-          cp android/app/build/outputs/apk/release/app-release.apk build-artifacts/Mausam-App.apk
+          if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk build-artifacts/Mausam-App.apk
+          else
+            cp android/app/build/outputs/apk/debug/app-debug.apk build-artifacts/Mausam-App.apk
+          fi
           cp android/app/build/outputs/apk/debug/app-debug.apk build-artifacts/Mausam-App-Debug.apk
 
       - name: Upload APKs as Artifacts
