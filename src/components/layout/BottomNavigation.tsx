@@ -22,7 +22,7 @@ export const BottomNavigation: React.FC = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
-      <div className="w-full max-w-md pointer-events-auto bg-white/95 backdrop-blur-xl border-t border-slate-200/90 px-3 py-2 flex items-center justify-between shadow-2xl">
+      <div className="w-full max-w-md pointer-events-auto bg-white/95 backdrop-blur-xl border-t border-slate-200/90 px-3 pt-2 pb-safe-bottom flex items-center justify-between shadow-2xl">
         {tabs.map((tab) => {
           const isActive = location.pathname === tab.path;
           const Icon = tab.icon;

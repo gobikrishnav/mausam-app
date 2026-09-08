@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'gov.in.imd.mausam',
+  appId: 'in.gov.imd.mausam',
   appName: 'Mausam',
   webDir: 'dist',
   server: {
