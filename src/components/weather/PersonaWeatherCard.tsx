@@ -13,6 +13,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { AirQualityData, CurrentWeather, DailyForecast, HourlyForecast, MarineData, PersonaPreferences, PersonaType } from '../../types';
+import { MlPersonaScore } from '../../services/mlPersonalizationEngine';
 
 interface PersonaCardProps {
   persona: PersonaType;
@@ -22,6 +23,7 @@ interface PersonaCardProps {
   airQuality?: AirQualityData | null;
   marine?: MarineData | null;
   preferences: PersonaPreferences;
+  mlScore?: MlPersonaScore;
 }
 
 export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
@@ -30,9 +32,36 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
   hourly,
   daily,
   airQuality,
-  marine
+  marine,
+  mlScore,
 }) => {
   const navigate = useNavigate();
+
+  const renderMlFooter = () => {
+    if (!mlScore) return null;
+    const isUrgent = mlScore.urgency === 'critical' || mlScore.urgency === 'warning';
+    return (
+      <div className={`mt-3 pt-2.5 border-t flex items-center justify-between text-[11px] ${
+        isUrgent ? 'border-amber-200/80 bg-amber-50/60 -mx-4 -mb-4 px-4 py-2.5 rounded-b-2xl' : 'border-slate-100'
+      }`}>
+        <div className="flex items-center gap-1.5 text-slate-600">
+          <span className={`inline-block w-2 h-2 rounded-full ${isUrgent ? 'bg-amber-500 animate-ping' : 'bg-[#0E468A]'}`} />
+          <span className="font-semibold text-slate-700">Offline ML:</span>
+          <span className="font-extrabold text-[#0E468A]">{mlScore.relevanceScore}% Match</span>
+          {mlScore.actionWindow && (
+            <span className="hidden sm:inline text-slate-500">• {mlScore.actionWindow}</span>
+          )}
+        </div>
+        <span className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] border ${
+          mlScore.urgency === 'critical' ? 'bg-red-100 text-red-800 border-red-300' :
+          mlScore.urgency === 'warning' ? 'bg-amber-100 text-amber-800 border-amber-300' :
+          'bg-emerald-100 text-emerald-800 border-emerald-300'
+        }`}>
+          Rank #{mlScore.rankPosition} • {mlScore.urgency}
+        </span>
+      </div>
+    );
+  };
 
   // 1. FITNESS CARD
   if (persona === 'fitness') {
@@ -74,6 +103,7 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
             <span className="text-xs font-black text-blue-700">500ml / hr</span>
           </div>
         </div>
+        {renderMlFooter()}
       </div>
     );
   }
@@ -119,6 +149,7 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
+        {renderMlFooter()}
       </div>
     );
   }
@@ -163,6 +194,7 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
             <span className="text-xs font-black text-blue-700">{nextRainDay ? nextRainDay.dayName : 'None in 7d'}</span>
           </div>
         </div>
+        {renderMlFooter()}
       </div>
     );
   }
@@ -200,6 +232,7 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
+        {renderMlFooter()}
       </div>
     );
   }
@@ -237,6 +270,7 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
             <span className="text-xs font-black text-amber-800">SPF 30+ recommended</span>
           </div>
         </div>
+        {renderMlFooter()}
       </div>
     );
   }
@@ -279,6 +313,7 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
             <span className="text-xs font-black text-blue-700">{marine?.tideStatus || 'Rising'}</span>
           </div>
         </div>
+        {renderMlFooter()}
       </div>
     );
   }
@@ -311,6 +346,7 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
           <span className="text-slate-800">Canopy Wind: <strong className="text-emerald-700 font-bold">Optimal (&lt;30km/h)</strong></span>
           <span className="text-slate-600">Rain Prob: <strong className="text-slate-900 font-bold">{rainProb}%</strong></span>
         </div>
+        {renderMlFooter()}
       </div>
     );
   }
@@ -352,6 +388,7 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
           <span className="text-xs font-black text-teal-800">Mild ({weather.humidity}%)</span>
         </div>
       </div>
+      {renderMlFooter()}
     </div>
   );
 };

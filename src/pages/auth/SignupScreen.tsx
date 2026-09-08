@@ -8,6 +8,7 @@ import { SignUpButton, useUser } from '@clerk/react';
 export const SignupScreen: React.FC = () => {
   const navigate = useNavigate();
   const setUser = useAppStore(state => state.setUser);
+  const loginAsGuest = useAppStore(state => state.loginAsGuest);
   const selectedPersonas = useAppStore(state => state.selectedPersonas);
   const preferences = useAppStore(state => state.preferences);
 
@@ -66,7 +67,7 @@ export const SignupScreen: React.FC = () => {
     <MobileContainer hasBottomNav={false} className="p-6 flex flex-col justify-between bg-[#F8FAFC]">
       <div>
         {/* Logo and header */}
-        <div className="flex items-center justify-center pt-6 mb-6">
+        <div className="flex items-center justify-center pt-safe-top mb-6">
           <div className="w-12 h-12 rounded-2xl bg-[#0E468A] flex items-center justify-center font-black text-white text-xl shadow-md">
             M
           </div>
@@ -187,19 +188,12 @@ export const SignupScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              setUser({
-                id: 'demo_user',
-                email: 'rohit.sharma@example.com',
-                fullName: 'Rohit Sharma',
-                selectedPersonas,
-                preferences,
-                hasCompletedTutorial: false,
-              });
+              loginAsGuest();
               navigate('/home', { replace: true });
             }}
-            className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 flex items-center justify-center gap-2.5 shadow-xs transition-all cursor-pointer"
+            className="w-full py-3.5 px-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
           >
-            <span>Continue as Guest / Demo</span>
+            <span>⚡ 1-Tap Instant Demo / Guest Login</span>
           </button>
         </div>
       </div>

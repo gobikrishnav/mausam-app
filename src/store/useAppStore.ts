@@ -79,6 +79,7 @@ interface AppState {
   markNotificationRead: (id: string) => void;
   dismissSevereAlert: (id: string) => void;
   triggerSimulatedAlert: (category?: SevereAlert['category']) => void;
+  loginAsGuest: () => void;
   updateSettings: (settings: Partial<{
     themeMode: 'light' | 'dark' | 'system';
     temperatureUnit: 'celsius' | 'fahrenheit';
@@ -92,24 +93,9 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      // Defaults
-      user: {
-        id: 'user_default',
-        email: 'user@mausam.in',
-        fullName: 'Rohit Sharma',
-        bio: 'Outdoor runner & agriculture enthusiast',
-        selectedPersonas: ['fitness', 'commuter', 'farmer'],
-        preferences: {
-          workoutTime: 'morning',
-          activityType: 'running',
-          commuteMode: 'car',
-          commuteTime: 'morning',
-          cropTypes: ['Wheat', 'Rice'],
-          aqiSensitivity: 'normal',
-        },
-        hasCompletedTutorial: false,
-      },
-      isAuthenticated: true,
+      // Defaults - Starts unauthenticated so Login / Welcome screen is shown
+      user: null,
+      isAuthenticated: false,
       hasCompletedTutorial: false,
       
       selectedPersonas: ['fitness', 'commuter', 'farmer'],
@@ -326,6 +312,26 @@ export const useAppStore = create<AppState>()(
           notifications: [newNotif, ...state.notifications],
           unreadAlertsCount: state.unreadAlertsCount + 1,
         };
+      }),
+      loginAsGuest: () => set({
+        user: {
+          id: 'citizen_guest',
+          email: 'citizen.guest@mausam.in',
+          fullName: 'Rohit Sharma (Citizen)',
+          bio: 'Active lifestyle & agriculture enthusiast',
+          selectedPersonas: ['fitness', 'commuter', 'farmer'],
+          preferences: {
+            workoutTime: 'morning',
+            activityType: 'running',
+            commuteMode: 'car',
+            commuteTime: 'morning',
+            cropTypes: ['Wheat', 'Mustard'],
+            aqiSensitivity: 'normal',
+          },
+          hasCompletedTutorial: true,
+        },
+        isAuthenticated: true,
+        hasCompletedTutorial: true,
       }),
       updateSettings: (settings) => set((state) => ({ ...state, ...settings })),
     }),

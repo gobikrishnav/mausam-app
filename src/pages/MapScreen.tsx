@@ -584,7 +584,7 @@ export const MapScreen: React.FC = () => {
       <div ref={mapContainerRef} className="absolute inset-0 w-full h-full z-0" />
 
       {/* Top Floating Control Deck */}
-      <div className="absolute top-3 left-3 right-3 z-10 space-y-2 pointer-events-none">
+      <div className="absolute top-2 left-3 right-3 z-10 space-y-2 pointer-events-none pt-safe-top">
         {/* Top Header Bar */}
         <div className="flex items-center justify-between pointer-events-auto bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-md border border-slate-200/90">
           <div className="flex items-center gap-2">
@@ -650,7 +650,7 @@ export const MapScreen: React.FC = () => {
       </div>
 
       {/* Right Floating Quick Tools */}
-      <div className="absolute right-3 top-36 z-10 flex flex-col gap-2 pointer-events-auto">
+      <div className="absolute right-3 top-44 z-10 flex flex-col gap-2 pointer-events-auto">
         <button
           onClick={handleLocateMe}
           className="p-2.5 rounded-xl bg-white/95 backdrop-blur-md text-[#0E468A] shadow-md border border-slate-200 hover:bg-slate-50 transition-colors"

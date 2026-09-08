@@ -9,7 +9,7 @@ export const WelcomeScreen: React.FC = () => {
   return (
     <MobileContainer hasBottomNav={false} className="p-6 flex flex-col justify-between bg-[#F8FAFC]">
       {/* Top Header */}
-      <div className="pt-6">
+      <div className="pt-safe-top">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#082046] to-[#0E468A] flex items-center justify-center font-black text-white text-base shadow-xs">

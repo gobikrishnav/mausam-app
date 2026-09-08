@@ -21,6 +21,14 @@
     overflow-x: hidden;
     touch-action: manipulation;
   }
+
+  .pt-safe-top {
+    padding-top: max(env(safe-area-inset-top, 0px), 2.25rem);
+  }
+
+  .pb-safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 1rem);
+  }
 }
 
 /* Figma-inspired Glassmorphic & Card Surfaces */

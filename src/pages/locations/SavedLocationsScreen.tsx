@@ -74,7 +74,7 @@ export const SavedLocationsScreen: React.FC = () => {
   return (
     <MobileContainer hasBottomNav={true} className="p-4 space-y-4 bg-[#F8FAFC]">
       {/* Header */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex items-center justify-between pt-safe-top">
         <button
           onClick={() => navigate('/home')}
           className="p-2 -ml-2 rounded-xl text-slate-500 hover:text-slate-900 transition-colors"

@@ -52,7 +52,7 @@ export const SettingsScreen: React.FC = () => {
   return (
     <MobileContainer hasBottomNav={true} className="p-4 space-y-4 bg-[#F8FAFC]">
       {/* Top Navbar */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex items-center justify-between pt-safe-top">
         <button
           onClick={() => navigate('/home')}
           className="p-2 -ml-2 rounded-xl text-slate-600 hover:text-slate-900 transition-colors"

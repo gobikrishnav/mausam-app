@@ -1,16 +1,17 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'in.gov.imd.mausam',
-  appName: 'MAUSAM',
+  appId: 'gov.in.imd.mausam',
+  appName: 'Mausam',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    cleartext: true,
   },
   android: {
     allowMixedContent: true,
-    backgroundColor: '#0E468A'
-  }
+    backgroundColor: '#FFFFFF',
+  },
 };
 
 export default config;

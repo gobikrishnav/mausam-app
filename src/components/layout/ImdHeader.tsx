@@ -21,7 +21,7 @@ import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
 
 export const ImdHeader: React.FC = () => {
   const navigate = useNavigate();
-  const { currentLocation, setCurrentLocation, refreshWeather, isLoadingWeather, setLiveGpsEnabled } = useAppStore();
+  const { currentLocation, setCurrentLocation, refreshWeather, isLoadingWeather, setLiveGpsEnabled, user, isAuthenticated } = useAppStore();
   const [istTime, setIstTime] = useState<string>('');
   const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -143,9 +143,9 @@ export const ImdHeader: React.FC = () => {
   };
 
   return (
-    <header className="bg-gradient-to-r from-[#061938] via-[#082046] to-[#0E468A] text-white border-b border-white/15 shadow-xl select-none sticky top-0 z-30">
+    <header className="bg-gradient-to-r from-[#061938] via-[#082046] to-[#0E468A] text-white border-b border-white/15 shadow-xl select-none sticky top-0 z-30 pt-safe-top">
       {/* Top Ministry & National Emblem Banner (100% Clean English) */}
-      <div className="px-3.5 pt-2.5 pb-2 border-b border-white/10 flex items-center justify-between">
+      <div className="px-3.5 pt-1.5 pb-2.5 border-b border-white/10 flex items-center justify-between">
         {/* Emblem & Official Title */}
         <div className="flex items-center gap-2.5">
           {/* Meteorological Crest Badge */}
@@ -176,8 +176,8 @@ export const ImdHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Action icons & Clerk Auth Controls */}
-        <div className="flex items-center gap-1.5">
+        {/* Action icons & Auth Controls */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => refreshWeather()}
             disabled={isLoadingWeather}
@@ -188,44 +188,28 @@ export const ImdHeader: React.FC = () => {
             <RefreshCw className={`w-3.5 h-3.5 ${isLoadingWeather ? 'animate-spin' : ''}`} />
           </button>
 
-          <Show when="signed-out">
-            <SignInButton mode="modal">
-              <button
-                type="button"
-                className="px-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-[11px] border border-white/20 transition-all active:scale-95 cursor-pointer"
-              >
-                Sign In
-              </button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <button
-                type="button"
-                className="px-2.5 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-[11px] shadow-xs transition-all active:scale-95 cursor-pointer"
-              >
-                Sign Up
-              </button>
-            </SignUpButton>
-          </Show>
-
-          <Show when="signed-in">
-            <div className="flex items-center gap-2">
-              <UserButton 
-                appearance={{
-                  elements: {
-                    userButtonAvatarBox: 'w-7 h-7 rounded-xl ring-2 ring-white/30',
-                  }
-                }}
-              />
-              <button
-                onClick={() => navigate('/settings')}
-                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 active:scale-95"
-                title="Profile & Settings"
-                aria-label="Settings"
-              >
-                <User className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </Show>
+          {isAuthenticated && user ? (
+            <button
+              onClick={() => navigate('/settings')}
+              className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 transition-all active:scale-95"
+              title="Profile & Settings"
+            >
+              <div className="w-5 h-5 rounded-lg bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center">
+                {user.fullName?.charAt(0) || 'U'}
+              </div>
+              <span className="text-[10px] font-bold text-sky-100 max-w-[65px] truncate">
+                {user.fullName?.split(' ')[0] || 'Profile'}
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/auth/login')}
+              className="px-2.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-[11px] shadow-xs transition-all active:scale-95 flex items-center gap-1"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Login</span>
+            </button>
+          )}
         </div>
       </div>
 

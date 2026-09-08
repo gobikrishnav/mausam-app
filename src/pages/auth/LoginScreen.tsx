@@ -8,6 +8,7 @@ import { SignInButton, useUser } from '@clerk/react';
 export const LoginScreen: React.FC = () => {
   const navigate = useNavigate();
   const setUser = useAppStore(state => state.setUser);
+  const loginAsGuest = useAppStore(state => state.loginAsGuest);
   const selectedPersonas = useAppStore(state => state.selectedPersonas);
   const preferences = useAppStore(state => state.preferences);
 
@@ -59,7 +60,7 @@ export const LoginScreen: React.FC = () => {
   return (
     <MobileContainer hasBottomNav={false} className="p-6 flex flex-col justify-between bg-[#F8FAFC]">
       <div>
-        <div className="flex items-center justify-center pt-8 mb-6">
+        <div className="flex items-center justify-center pt-safe-top mb-6">
           <div className="w-14 h-14 rounded-2xl bg-[#0E468A] p-0.5 shadow-md flex items-center justify-center">
             <span className="font-black text-white text-2xl">M</span>
           </div>
@@ -159,19 +160,12 @@ export const LoginScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              setUser({
-                id: 'demo_user',
-                email: 'demo.citizen@mausam.in',
-                fullName: 'Rohit Sharma',
-                selectedPersonas,
-                preferences,
-                hasCompletedTutorial: true,
-              });
+              loginAsGuest();
               navigate('/home', { replace: true });
             }}
-            className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 flex items-center justify-center gap-2.5 shadow-xs transition-all cursor-pointer"
+            className="w-full py-3.5 px-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
           >
-            <span>Continue as Guest / Demo</span>
+            <span>⚡ 1-Tap Instant Demo / Guest Login</span>
           </button>
         </div>
       </div>

@@ -171,7 +171,7 @@ export const AssistantScreen: React.FC = () => {
   return (
     <MobileContainer hasBottomNav={true} className="flex flex-col h-screen overflow-hidden p-0 bg-[#F8FAFC]">
       {/* Header */}
-      <div className="px-4 py-3 bg-white border-b border-slate-200 flex items-center justify-between z-10 shrink-0 shadow-xs">
+      <div className="px-4 pt-safe-top pb-3 bg-white border-b border-slate-200 flex items-center justify-between z-10 shrink-0 shadow-xs">
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => navigate('/home')}

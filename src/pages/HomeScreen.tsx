@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Zap, 
@@ -6,6 +6,7 @@ import {
   ChevronRight, 
   SlidersHorizontal,
   ArrowUpRight,
+  Cpu,
 } from 'lucide-react';
 import { MobileContainer } from '../components/layout/MobileContainer';
 import { ImdHeader } from '../components/layout/ImdHeader';
@@ -17,6 +18,7 @@ import { SevereAlertBanner } from '../components/weather/SevereAlertBanner';
 import { TutorialOverlay } from '../components/weather/TutorialOverlay';
 import { useAppStore } from '../store/useAppStore';
 import { generateSmartBrief } from '../services/aiService';
+import { runOfflineMlPersonalization } from '../services/mlPersonalizationEngine';
 
 export const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -63,6 +65,28 @@ export const HomeScreen: React.FC = () => {
       });
     }
   }, [weather, hourly, selectedPersonas, preferences, user?.fullName, currentLocation.name, airQuality]);
+
+  // Offline Machine Learning Personalization Model (M-AWPM v1.2)
+  const mlResult = useMemo(() => {
+    if (!weather) return null;
+    return runOfflineMlPersonalization({
+      weather,
+      hourly,
+      daily,
+      airQuality: airQuality || null,
+      marine: marine || null,
+      selectedPersonas,
+      preferences,
+    });
+  }, [weather, hourly, daily, airQuality, marine, selectedPersonas, preferences]);
+
+  // Dynamically re-rank persona cards by ML urgency & match score
+  const orderedPersonas = useMemo(() => {
+    if (!mlResult || mlResult.rankedScores.length === 0) return selectedPersonas;
+    const ranked = mlResult.rankedScores.map(s => s.persona);
+    const remaining = selectedPersonas.filter(p => !ranked.includes(p));
+    return [...ranked, ...remaining];
+  }, [mlResult, selectedPersonas]);
 
   // Countdown timer simulation for Nowcast 3-hour window
   useEffect(() => {
@@ -324,9 +348,14 @@ export const HomeScreen: React.FC = () => {
         <div className="space-y-2.5 pt-1">
           <div className="flex items-center justify-between px-1">
             <div>
-              <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-[#082046]">
-                Targeted Sector Intelligence
-              </h4>
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-[#082046]">
+                  Targeted Sector Intelligence
+                </h4>
+                <span className="text-[9px] font-bold bg-[#0E468A]/10 text-[#0E468A] px-1.5 py-0.5 rounded border border-[#0E468A]/20">
+                  ML Ranked
+                </span>
+              </div>
               <span className="text-[10px] text-slate-500 font-medium">
                 Personalized for your {selectedPersonas.length} declared lifestyles
               </span>
@@ -340,19 +369,50 @@ export const HomeScreen: React.FC = () => {
             </button>
           </div>
 
+          {/* ML Offline Engine Status Banner */}
+          {mlResult && (
+            <div className="bg-gradient-to-r from-slate-900 via-[#0B2545] to-[#134E5E] text-white rounded-2xl p-3 shadow-sm border border-slate-700/50">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <div className="p-1 rounded-md bg-emerald-500/20 text-emerald-300">
+                    <Cpu className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-[10px] font-mono font-bold text-emerald-400 tracking-wider">
+                    M-AWPM v1.2 ML Engine
+                  </span>
+                  <span className="text-[8px] uppercase tracking-wider font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                    100% Offline
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[9px] font-mono text-slate-300">
+                  <span>Phase: <strong className="text-amber-300 capitalize">{mlResult.diurnalPhase}</strong></span>
+                  <span>•</span>
+                  <span>DI: <strong>{mlResult.discomfortIndex}</strong></span>
+                </div>
+              </div>
+              <p className="text-xs text-sky-100 font-medium leading-relaxed">
+                {mlResult.topRecommendation}
+              </p>
+            </div>
+          )}
+
           {weather ? (
-            selectedPersonas.map((persona) => (
-              <PersonaWeatherCard
-                key={persona}
-                persona={persona}
-                weather={weather}
-                hourly={hourly}
-                daily={daily}
-                airQuality={airQuality}
-                marine={marine}
-                preferences={preferences}
-              />
-            ))
+            orderedPersonas.map((persona) => {
+              const score = mlResult?.rankedScores.find(s => s.persona === persona);
+              return (
+                <PersonaWeatherCard
+                  key={persona}
+                  persona={persona}
+                  weather={weather}
+                  hourly={hourly}
+                  daily={daily}
+                  airQuality={airQuality}
+                  marine={marine}
+                  preferences={preferences}
+                  mlScore={score}
+                />
+              );
+            })
           ) : null}
         </div>
       </div>

@@ -55,7 +55,7 @@ export const SatelliteScreen: React.FC = () => {
   return (
     <MobileContainer hasBottomNav={false} className="p-0 bg-[#F8FAFC] text-slate-900 flex flex-col h-screen overflow-hidden">
       {/* Official IMD Satellite Top Bar */}
-      <div className="px-3.5 py-3 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-xs">
+      <div className="px-3.5 pt-safe-top pb-3 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-xs">
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate('/home')}
