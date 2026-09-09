@@ -17,10 +17,16 @@ import {
 import { useAppStore } from '../../store/useAppStore';
 import { DEFAULT_INDIAN_LOCATIONS, searchLocations, reverseGeocodeGps } from '../../services/weatherApi';
 import { SavedLocation } from '../../types';
+import { useSafeClerk } from '../auth/useSafeClerk';
+import { getCleanDisplayName, getInitials } from '../../utils/userUtils';
 
 export const ImdHeader: React.FC = () => {
   const navigate = useNavigate();
   const { currentLocation, setCurrentLocation, refreshWeather, isLoadingWeather, setLiveGpsEnabled, user, isAuthenticated } = useAppStore();
+  const { user: clerkUser } = useSafeClerk();
+  const displayName = getCleanDisplayName(user, clerkUser);
+  const initials = getInitials(displayName);
+  const avatarUrl = user?.avatarUrl || clerkUser?.imageUrl;
   const [istTime, setIstTime] = useState<string>('');
   const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -193,11 +199,19 @@ export const ImdHeader: React.FC = () => {
               className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 transition-all active:scale-95"
               title="Profile & Settings"
             >
-              <div className="w-5 h-5 rounded-lg bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center">
-                {user.fullName?.charAt(0) || 'U'}
-              </div>
-              <span className="text-[10px] font-bold text-sky-100 max-w-[65px] truncate">
-                {user.fullName?.split(' ')[0] || 'Profile'}
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  className="w-5 h-5 rounded-lg object-cover border border-white/30 shrink-0"
+                />
+              ) : (
+                <div className="w-5 h-5 rounded-lg bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center shrink-0">
+                  {initials}
+                </div>
+              )}
+              <span className="text-[10px] font-bold text-sky-100 max-w-[75px] truncate">
+                {displayName}
               </span>
             </button>
           ) : (

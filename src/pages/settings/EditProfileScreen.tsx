@@ -3,13 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, User, Mail, Calendar, Camera } from 'lucide-react';
 import { MobileContainer } from '../../components/layout/MobileContainer';
 import { useAppStore } from '../../store/useAppStore';
+import { deriveNameFromEmail } from '../../utils/userUtils';
 
 export const EditProfileScreen: React.FC = () => {
   const navigate = useNavigate();
   const { user, updateProfile } = useAppStore();
 
-  const [fullName, setFullName] = useState(user?.fullName || 'Rohit Sharma');
-  const [bio, setBio] = useState(user?.bio || 'Outdoor runner & agriculture enthusiast');
+  const [fullName, setFullName] = useState(
+    user?.fullName && !user.fullName.toLowerCase().includes('rohit')
+      ? user.fullName
+      : (user?.email ? deriveNameFromEmail(user.email) : 'Citizen')
+  );
+  const [bio, setBio] = useState(user?.bio || 'Weather & outdoor lifestyle observer');
   const [dob, setDob] = useState(user?.dob || '1996-05-15');
   const [savedSuccess, setSavedSuccess] = useState(false);
 

@@ -18,6 +18,7 @@ import {
 import { MobileContainer } from '../../components/layout/MobileContainer';
 import { useAppStore } from '../../store/useAppStore';
 import { useSafeClerk } from '../../components/auth/useSafeClerk';
+import { getCleanDisplayName, getInitials } from '../../utils/userUtils';
 
 export const SettingsScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -30,6 +31,10 @@ export const SettingsScreen: React.FC = () => {
     updateSettings, 
     logout 
   } = useAppStore();
+
+  const displayName = getCleanDisplayName(user, clerkUser);
+  const initials = getInitials(displayName);
+  const avatarUrl = user?.avatarUrl || clerkUser?.imageUrl;
 
   const [morningTime, setMorningTime] = useState<string>('07:00');
   const [eveningSummary, setEveningSummary] = useState<boolean>(true);
@@ -90,13 +95,24 @@ export const SettingsScreen: React.FC = () => {
       {clerkUser || user ? (
         <div className="bg-white rounded-2xl p-4 flex items-center justify-between border border-slate-200 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#082046] to-[#0E468A] text-white font-black flex items-center justify-center text-base shadow-sm ring-2 ring-[#0E468A]/20">
-              {(clerkUser?.fullName || user?.fullName || 'U').charAt(0).toUpperCase()}
-            </div>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="w-12 h-12 rounded-2xl object-cover shadow-sm ring-2 ring-[#0E468A]/20"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#082046] to-[#0E468A] text-white font-black flex items-center justify-center text-base shadow-sm ring-2 ring-[#0E468A]/20">
+                {initials}
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-1.5">
                 <h3 className="font-extrabold text-sm text-slate-900">
-                  {clerkUser?.fullName || user?.fullName || 'Citizen User'}
+                  {displayName}
                 </h3>
                 <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-bold">
                   {clerkUser ? 'Clerk Verified' : 'Active Account'}
@@ -222,7 +238,7 @@ export const SettingsScreen: React.FC = () => {
           </div>
         ) : (
           <div className="p-2.5 bg-blue-50/60 border border-blue-200/80 rounded-xl text-[11px] text-blue-900 flex items-center justify-between">
-            <span>Session: <strong>{user?.fullName || 'Guest Citizen Observer'}</strong></span>
+            <span>Session: <strong>{displayName}</strong></span>
             <span className="text-[9px] font-mono text-blue-700 uppercase font-bold">Local Auth</span>
           </div>
         )}

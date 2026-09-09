@@ -20,6 +20,7 @@ import {
   fetchMarineData, 
   fetchWeatherData 
 } from '../services/weatherApi';
+import { deriveNameFromEmail } from '../utils/userUtils';
 
 interface AppState {
   // Auth & Profile
@@ -316,9 +317,9 @@ export const useAppStore = create<AppState>()(
       loginAsGuest: () => set({
         user: {
           id: 'citizen_guest',
-          email: 'citizen.guest@mausam.in',
-          fullName: 'Rohit Sharma (Citizen)',
-          bio: 'Active lifestyle & agriculture enthusiast',
+          email: 'citizen@mausam.in',
+          fullName: 'Citizen',
+          bio: 'Weather & outdoor lifestyle observer',
           selectedPersonas: ['fitness', 'commuter', 'farmer'],
           preferences: {
             workoutTime: 'morning',
@@ -337,6 +338,15 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'mausam_app_storage',
+      onRehydrateStorage: () => (state) => {
+        if (state?.user) {
+          if (!state.user.fullName || state.user.fullName.toLowerCase().includes('rohit')) {
+            state.user.fullName = state.user.email && !state.user.email.toLowerCase().includes('rohit')
+              ? deriveNameFromEmail(state.user.email)
+              : 'Citizen';
+          }
+        }
+      },
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,

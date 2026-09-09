@@ -4,6 +4,7 @@ import { Eye, EyeOff, Lock, Mail, User, ArrowRight } from 'lucide-react';
 import { MobileContainer } from '../../components/layout/MobileContainer';
 import { useAppStore } from '../../store/useAppStore';
 import { useSafeClerk } from '../../components/auth/useSafeClerk';
+import { deriveNameFromEmail } from '../../utils/userUtils';
 
 export const SignupScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -14,10 +15,10 @@ export const SignupScreen: React.FC = () => {
 
   const { user: clerkUser, isSignedIn, isAvailable, openSignUp } = useSafeClerk();
 
-  const [fullName, setFullName] = useState('Rohit Sharma');
-  const [email, setEmail] = useState('rohit.sharma@example.com');
-  const [password, setPassword] = useState('Password123!');
-  const [confirmPassword, setConfirmPassword] = useState('Password123!');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,10 +26,12 @@ export const SignupScreen: React.FC = () => {
   // Auto-sync Clerk user profile
   useEffect(() => {
     if (isSignedIn && clerkUser) {
+      const clerkName = clerkUser.fullName || clerkUser.firstName || deriveNameFromEmail(clerkUser.primaryEmailAddress?.emailAddress);
       setUser({
         id: clerkUser.id,
-        email: clerkUser.primaryEmailAddress?.emailAddress || 'user@mausam.in',
-        fullName: clerkUser.fullName || clerkUser.firstName || 'Mausam Citizen',
+        email: clerkUser.primaryEmailAddress?.emailAddress || 'citizen@mausam.in',
+        fullName: clerkName,
+        avatarUrl: clerkUser.imageUrl,
         selectedPersonas: selectedPersonas.length > 0 ? selectedPersonas : ['fitness', 'commuter'],
         preferences,
         hasCompletedTutorial: true,
@@ -97,7 +100,7 @@ export const SignupScreen: React.FC = () => {
                 onChange={(e) => setFullName(e.target.value)}
                 required
                 className="w-full bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-none"
-                placeholder="Rohit Sharma"
+                placeholder="Your Full Name"
               />
             </div>
           </div>
@@ -112,7 +115,7 @@ export const SignupScreen: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-none"
-                placeholder="rohit@example.com"
+                placeholder="name@example.com"
               />
             </div>
           </div>
@@ -127,7 +130,7 @@ export const SignupScreen: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-none"
-                placeholder="••••••••"
+                placeholder="Create a password"
               />
               <button
                 type="button"
@@ -149,7 +152,7 @@ export const SignupScreen: React.FC = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 className="w-full bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-none"
-                placeholder="••••••••"
+                placeholder="Confirm your password"
               />
             </div>
           </div>
@@ -175,10 +178,12 @@ export const SignupScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => {
+              const dynamicName = fullName || clerkUser?.fullName || clerkUser?.firstName || deriveNameFromEmail(email || clerkUser?.primaryEmailAddress?.emailAddress);
               setUser({
                 id: clerkUser?.id || 'clerk_user_' + Date.now().toString(36),
-                email: email || clerkUser?.primaryEmailAddress?.emailAddress || 'citizen@clerk.mausam.in',
-                fullName: fullName || clerkUser?.fullName || 'Clerk Citizen Observer',
+                email: clerkUser?.primaryEmailAddress?.emailAddress || email || 'citizen@mausam.in',
+                fullName: dynamicName,
+                avatarUrl: clerkUser?.imageUrl,
                 selectedPersonas: selectedPersonas.length > 0 ? selectedPersonas : ['fitness', 'commuter', 'farmer', 'health'],
                 preferences,
                 hasCompletedTutorial: true,

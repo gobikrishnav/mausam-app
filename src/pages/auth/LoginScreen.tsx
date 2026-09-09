@@ -4,6 +4,7 @@ import { Eye, EyeOff, Lock, Mail, ArrowRight } from 'lucide-react';
 import { MobileContainer } from '../../components/layout/MobileContainer';
 import { useAppStore } from '../../store/useAppStore';
 import { useSafeClerk } from '../../components/auth/useSafeClerk';
+import { deriveNameFromEmail } from '../../utils/userUtils';
 
 export const LoginScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -14,8 +15,8 @@ export const LoginScreen: React.FC = () => {
 
   const { user: clerkUser, isSignedIn, isAvailable, openSignIn } = useSafeClerk();
 
-  const [email, setEmail] = useState('user@mausam.in');
-  const [password, setPassword] = useState('Password123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,10 +24,12 @@ export const LoginScreen: React.FC = () => {
   // Auto-sync Clerk user profile
   useEffect(() => {
     if (isSignedIn && clerkUser) {
+      const clerkName = clerkUser.fullName || clerkUser.firstName || deriveNameFromEmail(clerkUser.primaryEmailAddress?.emailAddress);
       setUser({
         id: clerkUser.id,
-        email: clerkUser.primaryEmailAddress?.emailAddress || 'user@mausam.in',
-        fullName: clerkUser.fullName || clerkUser.firstName || 'Mausam Citizen',
+        email: clerkUser.primaryEmailAddress?.emailAddress || 'citizen@mausam.in',
+        fullName: clerkName,
+        avatarUrl: clerkUser.imageUrl,
         selectedPersonas: selectedPersonas.length > 0 ? selectedPersonas : ['fitness', 'commuter'],
         preferences,
         hasCompletedTutorial: true,
@@ -44,17 +47,18 @@ export const LoginScreen: React.FC = () => {
 
     setIsLoading(true);
     setTimeout(() => {
+      const dynamicName = deriveNameFromEmail(email);
       setUser({
-        id: 'user_123',
+        id: `user_${Date.now()}`,
         email,
-        fullName: 'Rohit Sharma',
+        fullName: dynamicName,
         selectedPersonas: selectedPersonas.length > 0 ? selectedPersonas : ['fitness', 'commuter'],
         preferences,
         hasCompletedTutorial: true,
       });
       setIsLoading(false);
       navigate('/home', { replace: true });
-    }, 500);
+    }, 400);
   };
 
   return (
@@ -90,7 +94,7 @@ export const LoginScreen: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-none"
-                placeholder="user@mausam.in"
+                placeholder="name@example.com"
               />
             </div>
           </div>
@@ -114,7 +118,7 @@ export const LoginScreen: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-none"
-                placeholder="••••••••"
+                placeholder="Enter your password"
               />
               <button
                 type="button"
@@ -148,10 +152,12 @@ export const LoginScreen: React.FC = () => {
             type="button"
             onClick={() => {
               // Set authenticated profile immediately in store
+              const dynamicName = clerkUser?.fullName || clerkUser?.firstName || (email ? deriveNameFromEmail(email) : 'Citizen');
               setUser({
                 id: clerkUser?.id || 'clerk_user_' + Date.now().toString(36),
-                email: email || clerkUser?.primaryEmailAddress?.emailAddress || 'citizen@clerk.mausam.in',
-                fullName: clerkUser?.fullName || 'Clerk Verified Citizen',
+                email: clerkUser?.primaryEmailAddress?.emailAddress || email || 'citizen@mausam.in',
+                fullName: dynamicName,
+                avatarUrl: clerkUser?.imageUrl,
                 selectedPersonas: selectedPersonas.length > 0 ? selectedPersonas : ['fitness', 'commuter', 'farmer', 'health'],
                 preferences,
                 hasCompletedTutorial: true,
