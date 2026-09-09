@@ -1,74 +1,102 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppStore } from '../store/useAppStore';
 
 export const SplashScreen: React.FC = () => {
   const navigate = useNavigate();
-  const isAuthenticated = useAppStore(state => state.isAuthenticated);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (isAuthenticated) {
-        navigate('/home', { replace: true });
-      } else {
-        navigate('/onboarding/welcome', { replace: true });
-      }
-    }, 2200);
+      navigate('/onboarding/welcome', { replace: true });
+    }, 2800);
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated, navigate]);
+  }, [navigate]);
+
+  const handleSkip = () => {
+    navigate('/onboarding/welcome', { replace: true });
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-sky-50 via-white to-slate-100 text-slate-900 p-6 overflow-hidden">
-      {/* Background ambient light glow */}
-      <div className="absolute w-72 h-72 rounded-full bg-sky-200/40 blur-3xl -top-10 -left-10 animate-pulse pointer-events-none" />
-      <div className="absolute w-80 h-80 rounded-full bg-blue-100/50 blur-3xl -bottom-10 -right-10 animate-pulse pointer-events-none delay-1000" />
+    <div 
+      onClick={handleSkip}
+      className="fixed inset-0 z-50 flex flex-col justify-between items-center bg-[#FAF9F5] text-slate-900 select-none overflow-hidden cursor-pointer"
+    >
+      {/* Top Section: Emblems & Official Identity */}
+      <div className="w-full flex flex-col items-center pt-safe-top pt-8 px-6 text-center animate-fade-in">
+        {/* State Emblem of India (Lion Capital of Ashoka) */}
+        <div className="flex flex-col items-center">
+          <img 
+            src="/images/emblem_of_india.svg" 
+            alt="State Emblem of India" 
+            className="h-12 w-auto object-contain drop-shadow-xs"
+          />
+          <h2 className="text-xs font-bold text-slate-800 tracking-wide mt-1.5 leading-none">
+            भारत सरकार
+          </h2>
+          <p className="text-[11px] font-medium text-slate-600 tracking-tight mt-0.5 leading-tight">
+            Government of India
+          </p>
+        </div>
 
-      {/* Animated Logo Container */}
-      <div className="relative flex items-center justify-center mb-8">
-        <div className="w-32 h-32 rounded-3xl bg-white border border-slate-200/80 flex items-center justify-center shadow-xl shadow-[#0E468A]/10 transform hover:scale-105 transition-transform duration-500">
-          <svg className="w-20 h-20" viewBox="0 0 100 100" fill="none">
-            <defs>
-              <linearGradient id="sunSplash" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#FBBF24" />
-                <stop offset="100%" stopColor="#F59E0B" />
-              </linearGradient>
-              <linearGradient id="cloudSplash" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#FFFFFF" />
-                <stop offset="100%" stopColor="#93C5FD" />
-              </linearGradient>
-            </defs>
-            {/* Sun */}
-            <circle cx="65" cy="35" r="20" fill="url(#sunSplash)" className="animate-spin-slow origin-[65px_35px]" />
-            {/* Cloud */}
-            <path 
-              d="M30 75 h45 a18 18 0 0 0 2 -36 a26 26 0 0 0 -48 -8 a16 16 0 0 0 -19 16 a16 16 0 0 0 20 28 z" 
-              fill="url(#cloudSplash)" 
-              className="drop-shadow-md"
-            />
-          </svg>
+        {/* IMD Circular Crest Logo */}
+        <div className="flex flex-col items-center mt-3">
+          <img 
+            src="/images/imd_crest_logo.png" 
+            alt="India Meteorological Department (IMD) Logo" 
+            className="w-12 h-12 rounded-full object-contain shadow-xs ring-1 ring-slate-200/60"
+          />
+          <h3 className="text-xs font-bold text-slate-800 tracking-wide mt-1.5 leading-none">
+            भारत मौसम विज्ञान विभाग
+          </h3>
+          <p className="text-[11px] font-medium text-slate-600 tracking-tight mt-0.5 leading-tight">
+            India Meteorological Department
+          </p>
+          <p className="text-[10px] font-semibold text-slate-500 tracking-wider">
+            (IMD)
+          </p>
+        </div>
+
+        {/* Mausam Brand Name & Tagline */}
+        <div className="mt-4 flex flex-col items-center">
+          <h1 className="text-3xl font-black tracking-tight text-[#082046] font-display">
+            Mausam
+          </h1>
+          <p className="text-xs font-semibold text-slate-600 tracking-tight mt-0.5">
+            Weather for a Safer Tomorrow
+          </p>
         </div>
       </div>
 
-      {/* Brand Title */}
-      <h1 className="text-4xl font-black font-display tracking-wider text-[#082046]">
-        MAUSAM
-      </h1>
-      
-      {/* Tagline */}
-      <p className="text-sm font-sans tracking-wide text-slate-600 mt-2 font-semibold">
-        Smart Subcontinent Weather Intelligence
-      </p>
-
-      {/* Progress Dots Indicator */}
-      <div className="mt-10 flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-[#0E468A] animate-ping" />
-        <span className="w-2 h-2 rounded-full bg-sky-500 animate-ping delay-200" />
-        <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping delay-500" />
+      {/* Middle & Lower Section: Serene Mountain Sunrise & Waving Indian Tricolor */}
+      <div className="w-full relative flex-1 flex flex-col justify-end max-h-[46vh] overflow-hidden">
+        {/* Landscape Image with soft gradient fade */}
+        <div className="relative w-full h-full">
+          <img 
+            src="/images/splash_landscape.jpg" 
+            alt="Indian Meteorological Landscape" 
+            className="w-full h-full object-cover object-bottom"
+          />
+          {/* Subtle top gradient mask for seamless blend */}
+          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#FAF9F5] to-transparent pointer-events-none" />
+          
+          {/* Bottom subtle shadow/gradient */}
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#FAF9F5]/90 to-transparent pointer-events-none" />
+        </div>
       </div>
 
-      <div className="absolute bottom-8 text-[11px] text-slate-500 font-medium tracking-tight">
-        Powered by IMD & Open-Meteo Intelligence
+      {/* Bottom Section: Official Motto */}
+      <div className="w-full flex flex-col items-center pb-safe-bottom pb-7 pt-2 text-center bg-[#FAF9F5]">
+        <h4 className="text-xs font-bold text-slate-800 tracking-wide leading-none">
+          जनहित में, सदैव
+        </h4>
+        <p className="text-[11px] font-medium text-slate-500 tracking-tight mt-1 leading-tight">
+          In Service of the People
+        </p>
+        
+        {/* Subtle touch indicator */}
+        <span className="text-[9px] text-slate-400 font-medium tracking-wide mt-2 opacity-60">
+          Tap anywhere to continue
+        </span>
       </div>
     </div>
   );

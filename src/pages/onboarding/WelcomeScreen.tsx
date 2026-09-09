@@ -1,85 +1,74 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowRight, ShieldCheck, Compass, HeartHandshake } from 'lucide-react';
-import { MobileContainer } from '../../components/layout/MobileContainer';
+import { ArrowRight } from 'lucide-react';
 
 export const WelcomeScreen: React.FC = () => {
   const navigate = useNavigate();
 
+  const handleSkip = () => {
+    navigate('/home', { replace: true });
+  };
+
+  const handleNext = () => {
+    navigate('/onboarding/persona');
+  };
+
   return (
-    <MobileContainer hasBottomNav={false} className="p-6 flex flex-col justify-between bg-[#F8FAFC]">
-      {/* Top Header */}
-      <div className="pt-safe-top">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#082046] to-[#0E468A] flex items-center justify-center font-black text-white text-base shadow-xs">
-              M
-            </div>
-            <span className="font-extrabold tracking-wider text-slate-900 text-base">MAUSAM</span>
-          </div>
-
-          <button
-            onClick={() => navigate('/auth/login')}
-            className="text-xs font-bold text-[#0E468A] hover:text-[#082046] px-3 py-1.5 rounded-full hover:bg-blue-50 transition-colors"
-          >
-            Sign In
-          </button>
-        </div>
-
-        {/* Hero Visual Card */}
-        <div className="mt-8 rounded-3xl bg-white border border-slate-200/90 p-6 shadow-lg relative overflow-hidden">
-          <div className="absolute top-2 right-2 p-3 opacity-5 pointer-events-none">
-            <Compass className="w-28 h-28 text-[#0E468A]" />
-          </div>
-
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0E468A] text-[11px] font-bold mb-4 border border-blue-200">
-            <Sparkles className="w-3.5 h-3.5" />
-            Hyper-Personalized Weather
-          </div>
-
-          <h2 className="text-2xl font-extrabold text-[#082046] leading-tight font-display">
-            Weather that truly understands you.
-          </h2>
-
-          <p className="text-xs text-slate-600 mt-2.5 leading-relaxed font-normal">
-            No more cryptic meteorological figures. MAUSAM translates atmospheric data into context-aware answers for your daily routine.
-          </p>
-
-          <div className="mt-6 space-y-3">
-            <div className="flex items-center gap-2.5 text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Safety-first override for cyclones & severe storms</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-medium">
-              <HeartHandshake className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>Lifestyle feeds for fitness, farming, commuting & health</span>
-            </div>
-          </div>
-        </div>
+    <div className="fixed inset-0 z-50 flex flex-col justify-between bg-[#FAF9F5] text-slate-900 select-none overflow-hidden p-6 pt-safe-top pb-safe-bottom">
+      {/* Top Header with Skip Link */}
+      <div className="w-full flex items-center justify-end pt-2">
+        <button
+          onClick={handleSkip}
+          className="text-xs sm:text-sm font-semibold text-[#0E468A] hover:text-[#082046] transition-colors py-1 px-2"
+        >
+          Skip
+        </button>
       </div>
 
-      {/* Bottom Controls */}
-      <div className="pb-4 space-y-4">
-        {/* Progress indicator */}
-        <div className="flex justify-center items-center gap-1.5">
-          <span className="w-6 h-1.5 rounded-full bg-[#0E468A]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-          <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-          <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-        </div>
-
-        <button
-          onClick={() => navigate('/onboarding/persona')}
-          className="w-full py-3.5 px-6 rounded-2xl bg-[#0E468A] hover:bg-[#082046] text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 group transition-all"
-        >
-          <span>Get Started</span>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-        </button>
-
-        <p className="text-[11px] text-center text-slate-500 font-medium">
-          Step 1 of 4 • Set up your lifestyle profile
+      {/* Main Headline & Descriptive Subtext */}
+      <div className="mt-2 space-y-3 px-1">
+        <h1 className="text-[26px] sm:text-3xl font-black text-[#082046] leading-[1.18] tracking-tight font-display">
+          Reliable<br />
+          Weather Information<br />
+          for a Better India
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed max-w-sm">
+          Get accurate, location-specific forecasts and alerts from the India Meteorological Department.
         </p>
       </div>
-    </MobileContainer>
+
+      {/* Center Monument Illustration: India Gate with Trees & Flying Birds */}
+      <div className="my-auto w-full flex items-center justify-center py-4">
+        <div className="w-full max-w-md aspect-[4/3] rounded-3xl overflow-hidden shadow-sm border border-slate-200/70 bg-white relative">
+          <img
+            src="/images/india_gate_onboarding.jpg"
+            alt="India Gate with lush green trees and flying birds"
+            className="w-full h-full object-cover"
+          />
+          {/* Subtle soft edge gradient */}
+          <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-3xl pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Bottom Controls: Carousel Indicators & Circular Action Button */}
+      <div className="w-full flex items-center justify-between pt-4 pb-2 px-1">
+        {/* Pagination Dots Indicator */}
+        <div className="flex items-center gap-1.5" aria-label="Page 1 of 4">
+          <span className="w-6 h-2 rounded-full bg-[#082046] transition-all" />
+          <span className="w-2 h-2 rounded-full bg-slate-300" />
+          <span className="w-2 h-2 rounded-full bg-slate-300" />
+          <span className="w-2 h-2 rounded-full bg-slate-300" />
+        </div>
+
+        {/* Circular Action Next Button (→) */}
+        <button
+          onClick={handleNext}
+          aria-label="Next slide"
+          className="w-14 h-14 rounded-full bg-[#082046] hover:bg-[#061836] active:scale-95 text-white flex items-center justify-center shadow-lg shadow-[#082046]/25 transition-all duration-200 group"
+        >
+          <ArrowRight className="w-6 h-6 text-white stroke-[2.5] group-hover:translate-x-0.5 transition-transform" />
+        </button>
+      </div>
+    </div>
   );
 };
