@@ -440,14 +440,14 @@ export const HomeScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-1.5">
                 <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-[#082046]">
-                  Targeted Sector Intelligence
+                  Personal Weather Guide
                 </h4>
                 <span className="text-[9px] font-bold bg-[#0E468A]/10 text-[#0E468A] px-1.5 py-0.5 rounded border border-[#0E468A]/20">
-                  ML Ranked
+                  For You
                 </span>
               </div>
               <span className="text-[10px] text-slate-500 font-medium">
-                Personalized for your {selectedPersonas.length} declared lifestyles
+                Personalized advice for your daily routines & outdoor plans
               </span>
             </div>
             <button
@@ -459,33 +459,31 @@ export const HomeScreen: React.FC = () => {
             </button>
           </div>
 
-          {/* M-BPNN v3.0 Backpropagation Neural Network Offline Banner */}
+          {/* Friendly Citizen Weather Guide Banner */}
           {(neuralResult || mlResult) && (
             <div 
               onClick={() => setShowMlHubModal(true)}
               className="bg-gradient-to-r from-slate-900 via-[#0B2545] to-[#134E5E] text-white rounded-2xl p-3.5 shadow-sm border border-slate-700/60 cursor-pointer hover:border-emerald-500/50 active:scale-[0.99] transition-all group relative overflow-hidden"
             >
               <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
-                  <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 group-hover:bg-emerald-500/30 transition-colors">
-                    <Brain className="w-4 h-4 animate-pulse" />
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-amber-400/20 text-amber-300 group-hover:bg-amber-400/30 transition-colors">
+                    <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] font-mono font-bold text-emerald-400 tracking-wider">
-                        M-BPNN v3.0 Neural AI
+                      <span className="text-[12px] font-bold text-white tracking-wide">
+                        Daily Weather & Lifestyle Guide
                       </span>
                       <span className="text-[8px] uppercase tracking-wider font-extrabold bg-emerald-950 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded">
-                        100% Offline
+                        100% Private
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-[9px] font-mono text-slate-300">
-                  <span>Epoch: <strong className="text-amber-300">{neuralResult?.metrics.epochCount ?? 142}</strong></span>
-                  <span>•</span>
-                  <span>Loss: <strong className="text-emerald-300">{neuralResult?.metrics.lastMseLoss ?? 0.024}</strong></span>
-                  <span className="text-emerald-300 text-xs font-bold group-hover:translate-x-0.5 transition-transform">→</span>
+                <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 group-hover:text-emerald-300">
+                  <span>View Guide</span>
+                  <span className="text-xs group-hover:translate-x-0.5 transition-transform">→</span>
                 </div>
               </div>
               <p className="text-xs text-sky-100 font-medium leading-relaxed">
@@ -494,10 +492,10 @@ export const HomeScreen: React.FC = () => {
               <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-300">
                 <span className="flex items-center gap-1">
                   <Activity className="w-3 h-3 text-emerald-400" />
-                  <span>12 Inputs → 8 Hidden Neurons → 8 Outputs</span>
+                  <span>Fitness • Commute • Farming • Health • Travel</span>
                 </span>
-                <span className="text-emerald-400 font-bold font-mono">
-                  {neuralResult?.metrics.inferenceTimeMs ?? 1.2}ms • Inspect Backprop
+                <span className="text-amber-300 font-bold">
+                  Tap to view tips & timings
                 </span>
               </div>
             </div>
@@ -537,22 +535,22 @@ export const HomeScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Interactive On-Device Offline ML Personalization Hub Modal (Backpropagation Inspector) */}
+      {/* Friendly Citizen Weather Guide Modal */}
       {showMlHubModal && (neuralResult || mlResult) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/70 backdrop-blur-sm animate-fadeIn">
           <div className="bg-[#0B1528] text-white w-full max-w-lg rounded-3xl border border-slate-700 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             {/* Modal Header */}
-            <div className="px-5 py-3.5 bg-gradient-to-r from-[#082046] via-[#0C2956] to-[#0E468A] flex items-center justify-between border-b border-slate-700/80">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
-                  <Brain className="w-5 h-5" />
+            <div className="px-5 py-4 bg-gradient-to-r from-[#082046] via-[#0C2956] to-[#0E468A] flex items-center justify-between border-b border-slate-700/80">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-400/20 text-amber-300">
+                  <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-black tracking-wider uppercase text-white">
-                    M-BPNN v3.0 Backpropagation Neural Inspector
+                  <h3 className="text-sm font-extrabold tracking-wide text-white">
+                    Personal Weather Guide
                   </h3>
-                  <p className="text-[10px] text-sky-200">
-                    On-Device 3-Layer Perceptron (12 Inputs → 8 Hidden → 8 Outputs)
+                  <p className="text-[11px] text-sky-200">
+                    Tailored advice for your daily activities, health, and travel
                   </p>
                 </div>
               </div>
@@ -566,211 +564,131 @@ export const HomeScreen: React.FC = () => {
 
             {/* Modal Scrollable Body */}
             <div className="p-4 space-y-4 overflow-y-auto">
-              {/* Live Neural Net Training Telemetry Card */}
-              <div className="bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800 space-y-2">
+              {/* Outdoor Comfort Card in Simple Words */}
+              <div className="bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
-                    <Cpu className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Neural Network Telemetry</span>
+                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Activity className="w-4 h-4 text-emerald-400" />
+                    <span>Today's Outdoor Comfort</span>
                   </span>
-                  <span className="text-[9px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-bold">
-                    Zero-Telemetry Offline AI
+                  <span className="text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded">
+                    100% Private & Offline
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
-                    <span className="text-[9px] text-slate-400 block font-semibold uppercase">Loss Function (MSE)</span>
-                    <span className="text-sm font-black font-mono text-emerald-400">
-                      {neuralResult?.metrics.lastMseLoss ?? 0.024}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-800/70 p-3 rounded-xl border border-slate-700/60">
+                    <span className="text-[10px] text-slate-400 block font-semibold uppercase">Comfort Level</span>
+                    <span className="text-sm font-extrabold text-amber-300 mt-0.5 block">
+                      {(neuralResult?.discomfortIndex ?? 23.5) < 21 ? 'Pleasant & Comfortable' :
+                       (neuralResult?.discomfortIndex ?? 23.5) < 25 ? 'Moderate Humidity' :
+                       'Warm & Humid'}
                     </span>
-                    <span className="text-[8px] text-slate-500 block font-mono">E = ½ Σ (y - ŷ)²</span>
-                  </div>
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
-                    <span className="text-[9px] text-slate-400 block font-semibold uppercase">Training Epochs</span>
-                    <span className="text-sm font-black font-mono text-amber-300">
-                      {neuralResult?.metrics.epochCount ?? 142} epochs
+                    <span className="text-[10px] text-slate-400 mt-1 block leading-relaxed">
+                      {(neuralResult?.discomfortIndex ?? 23.5) < 21 ? 'Great weather for walking and outdoor sports.' :
+                       (neuralResult?.discomfortIndex ?? 23.5) < 25 ? 'Comfortable for routine daily errands.' :
+                       'Stay hydrated with water and avoid direct afternoon sun.'}
                     </span>
-                    <span className="text-[8px] text-slate-500 block font-mono">Backprop iterations</span>
                   </div>
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
-                    <span className="text-[9px] text-slate-400 block font-semibold uppercase">Optimizer & Momentum</span>
-                    <span className="text-sm font-bold font-mono text-sky-400">
-                      η=0.08, α=0.85
-                    </span>
-                    <span className="text-[8px] text-slate-500 block font-mono">Gradient Descent</span>
-                  </div>
-                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
-                    <span className="text-[9px] text-slate-400 block font-semibold uppercase">Inference Speed</span>
-                    <span className="text-sm font-bold font-mono text-emerald-400">
-                      {neuralResult?.metrics.inferenceTimeMs ?? 1.2} ms
-                    </span>
-                    <span className="text-[8px] text-slate-500 block font-mono">Local JS Web Engine</span>
-                  </div>
-                </div>
 
-                {/* Interactive Backpropagation Triggers */}
-                <div className="flex gap-2 pt-2 border-t border-slate-800">
-                  <button
-                    onClick={handleLiveTrainStep}
-                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 active:scale-95 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-md transition-all"
-                  >
-                    <Zap className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Train 1 Backprop Epoch</span>
-                  </button>
-                  <button
-                    onClick={handleResetNeuralNet}
-                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 text-[11px] font-semibold flex items-center gap-1 border border-slate-700 transition-all"
-                    title="Reset Weights to Baseline"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Reset</span>
-                  </button>
+                  <div className="bg-slate-800/70 p-3 rounded-xl border border-slate-700/60">
+                    <span className="text-[10px] text-slate-400 block font-semibold uppercase">Time of Day</span>
+                    <span className="text-sm font-extrabold text-sky-400 mt-0.5 block capitalize">
+                      {mlResult?.diurnalPhase ?? 'Daytime'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-1 block leading-relaxed">
+                      Advisories adjust automatically as daytime temperature changes.
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* 8 Hidden Neurons Activation Vector */}
-              {neuralResult && (
-                <div className="bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Hidden Layer Activations (h₁ - h₈ Sigmoid)</span>
-                    </h4>
-                    <span className="text-[9px] text-sky-300 font-mono">Range: 0.0 → 1.0</span>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-2">
-                    {neuralResult.hiddenActivations.map((act, idx) => (
-                      <div key={idx} className="bg-slate-800/80 rounded-xl p-2 border border-slate-700/60 text-center">
-                        <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono mb-1">
-                          <span>h_{idx + 1}</span>
-                          <span className="text-emerald-400 font-bold">{act.toFixed(2)}</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-sky-400 to-emerald-400 transition-all duration-300"
-                            style={{ width: `${Math.round(act * 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 12-Dimensional Input Atmospheric Vector */}
-              {neuralResult && (
-                <div className="bg-slate-900/80 rounded-2xl p-3.5 border border-slate-800 space-y-2">
-                  <h4 className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 flex items-center gap-1.5">
-                    <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>12-Dimensional Normalized Input Vector</span>
+              {/* Persona Activity Recommendations & Best Action Windows */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-0.5">
+                  <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <BarChart2 className="w-4 h-4 text-sky-400" />
+                    <span>Personalized Activity Advisories</span>
                   </h4>
-                  <div className="grid grid-cols-3 gap-1.5 text-[9px]">
-                    {[
-                      { label: 'Temp (Norm)', val: neuralResult.featureVector[0] },
-                      { label: 'Humidity', val: neuralResult.featureVector[1] },
-                      { label: 'Rain Prob', val: neuralResult.featureVector[2] },
-                      { label: 'Rain Amount', val: neuralResult.featureVector[3] },
-                      { label: 'Wind Speed', val: neuralResult.featureVector[4] },
-                      { label: "Thom's DI", val: neuralResult.featureVector[5] },
-                      { label: 'Air Quality', val: neuralResult.featureVector[6] },
-                      { label: 'UV Index', val: neuralResult.featureVector[7] },
-                      { label: 'Diurnal Sun', val: neuralResult.featureVector[8] },
-                      { label: 'Marine Surge', val: neuralResult.featureVector[9] },
-                      { label: 'Pressure', val: neuralResult.featureVector[10] },
-                      { label: 'Affinity', val: neuralResult.featureVector[11] },
-                    ].map((f, i) => (
-                      <div key={i} className="bg-slate-800/60 p-1.5 rounded-lg border border-slate-700/50">
-                        <div className="text-slate-400 truncate">{f.label}</div>
-                        <div className="font-mono font-bold text-amber-300">{f.val?.toFixed(2) ?? '0.00'}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Best timings for you
+                  </span>
                 </div>
-              )}
 
-              {/* Biometeorological Indices */}
-              <div>
-                <h4 className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 mb-2 flex items-center gap-1.5">
-                  <BarChart2 className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Real-Time Biometeorological Indices</span>
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-slate-800/80 rounded-xl p-2.5 border border-slate-700">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 block">Thom's Discomfort Index</span>
-                    <span className="text-lg font-black text-amber-400">
-                      {neuralResult?.discomfortIndex ?? mlResult?.discomfortIndex ?? 23.5}
-                    </span>
-                    <span className="text-[9px] text-slate-400 block mt-0.5">
-                      {(neuralResult?.discomfortIndex ?? 23.5) < 21 ? 'Comfortable (No heat distress)' : (neuralResult?.discomfortIndex ?? 23.5) < 25 ? 'Moderate (50% population discomfort)' : 'High Heat Stress Alert'}
-                    </span>
-                  </div>
-                  <div className="bg-slate-800/80 rounded-xl p-2.5 border border-slate-700">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 block">Diurnal Phase</span>
-                    <span className="text-lg font-black text-sky-400 capitalize">
-                      {mlResult?.diurnalPhase ?? 'daytime'}
-                    </span>
-                    <span className="text-[9px] text-slate-400 block mt-0.5">Solar irradiance cycle weight aligned</span>
-                  </div>
+                <div className="space-y-2.5">
+                  {(neuralResult?.scores || mlResult?.rankedScores || []).map((score: any, idx: number) => {
+                    const personaTitles: Record<string, string> = {
+                      fitness: '🏃 Outdoor Fitness & Workouts',
+                      farmer: '🌾 Farming & Agriculture',
+                      commuter: '🚗 Daily Commute & Transit',
+                      health: '❤️ Health & Well-being',
+                      beachgoer: '🏖️ Coastal & Beach Visits',
+                      traveler: '✈️ Inter-City Travel',
+                      parent: '👨‍👩‍👧 Family & School Activities',
+                      event_planner: '🎪 Outdoor Events & Gatherings',
+                    };
+
+                    return (
+                      <div key={score.persona} className="bg-slate-800/70 rounded-2xl p-3.5 border border-slate-700/70 space-y-1.5 hover:border-slate-600 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-white">
+                              {personaTitles[score.persona] || score.persona}
+                            </span>
+                            <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                              score.urgency === 'critical' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                              score.urgency === 'warning' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                              score.urgency === 'optimal' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                              'bg-slate-700 text-slate-300'
+                            }`}>
+                              {score.urgency === 'optimal' ? 'Favorable' :
+                               score.urgency === 'warning' ? 'Caution' :
+                               score.urgency === 'critical' ? 'Action Needed' : 'Moderate'}
+                            </span>
+                          </div>
+                          <span className="text-xs font-extrabold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                            {score.neuralScore ?? score.relevanceScore}% Match
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          {score.primaryFactor}
+                        </p>
+
+                        {(score.optimalActionWindow || score.actionWindow) && (
+                          <div className="text-[11px] text-amber-300 bg-amber-950/40 border border-amber-500/30 rounded-lg px-2.5 py-1 flex items-center gap-1.5 font-medium mt-1">
+                            <span>⏰ <strong>Best Window:</strong> {score.optimalActionWindow || score.actionWindow}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Neural Persona Ranking Outputs */}
-              <div>
-                <h4 className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 mb-2 flex items-center gap-1.5">
-                  <Brain className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Persona Neural Confidence & Action Windows</span>
-                </h4>
-                <div className="space-y-2">
-                  {(neuralResult?.scores || mlResult?.rankedScores || []).map((score: any, idx: number) => (
-                    <div key={score.persona} className="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/70">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="w-4 h-4 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-bold flex items-center justify-center">
-                            {idx + 1}
-                          </span>
-                          <span className="text-xs font-bold text-white capitalize">{score.persona}</span>
-                          <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                            score.urgency === 'critical' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
-                            score.urgency === 'warning' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                            score.urgency === 'optimal' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                            'bg-slate-700 text-slate-300'
-                          }`}>
-                            {score.urgency}
-                          </span>
-                        </div>
-                        <span className="text-xs font-mono font-black text-emerald-400">
-                          {score.neuralScore ?? score.relevanceScore}% Match
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-300 mt-1 leading-normal">
-                        {score.primaryFactor}
-                      </p>
-                      {(score.optimalActionWindow || score.actionWindow) && (
-                        <div className="text-[9px] text-sky-300 mt-1 font-mono">
-                          Optimal Action Window: {score.optimalActionWindow || score.actionWindow}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Compliance & Verification Stamp */}
-              <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex items-center gap-2 text-[10px] text-emerald-200">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Runs securely on-device with zero network latency. Gradient descent updates weights locally via backpropagation of user feedback.</span>
+              {/* Privacy Notice */}
+              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex items-center gap-2.5 text-xs text-emerald-200">
+                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span>Runs securely on your phone. No personal activity data is sent to external servers.</span>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-5 py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-end">
+            <div className="px-5 py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between">
+              <button
+                onClick={handleResetNeuralNet}
+                className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1"
+                title="Reset preferences to default"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Reset to Default</span>
+              </button>
+
               <button
                 onClick={() => setShowMlHubModal(false)}
-                className="px-4 py-1.5 rounded-xl bg-[#0E468A] hover:bg-[#082046] text-white text-xs font-bold transition-colors"
+                className="px-5 py-2 rounded-xl bg-[#0E468A] hover:bg-[#082046] text-white text-xs font-bold transition-colors"
               >
-                Close Inspector
+                Close Guide
               </button>
             </div>
           </div>
