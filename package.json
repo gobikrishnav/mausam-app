@@ -1,7 +1,7 @@
 {
   "name": "mausam-mega-app",
   "private": true,
-  "version": "3.4.1",
+  "version": "3.4.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
+    "@capacitor/app": "^8.1.1",
     "@capacitor/cli": "^8.5.1",
     "@capacitor/core": "^8.5.1",
     "@clerk/react": "^6.15.1",

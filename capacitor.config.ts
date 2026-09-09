@@ -7,6 +7,18 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     cleartext: true,
+    allowNavigation: [
+      'accounts.google.com',
+      '*.accounts.google.com',
+      '*.google.com',
+      '*.googleusercontent.com',
+      '*.gstatic.com',
+      'apis.google.com',
+      '*.clerk.accounts.dev',
+      'more-marmoset-34.clerk.accounts.dev',
+      '*.clerk.com',
+      'clerk.com',
+    ],
   },
   android: {
     allowMixedContent: true,

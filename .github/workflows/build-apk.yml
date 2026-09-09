@@ -76,7 +76,7 @@ jobs:
         run: |
           echo "Scanning for previous releases to purge..."
           gh release list --limit 100 --json tagName -q '.[].tagName' | while read tag; do
-            if [ "$tag" != "v3.4.1" ]; then
+            if [ "$tag" != "v3.4.2" ]; then
               echo "Removing obsolete release $tag so only single APK remains on GitHub..."
               gh release delete "$tag" --yes --cleanup-tag || true
             fi
@@ -86,18 +86,24 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.4.1
-          name: "MAUSAM Mega Unified App v3.4.1 (Official Single Android APK - Final Release)"
+          tag_name: v3.4.2
+          name: "MAUSAM Mega Unified App v3.4.2 (Official Single Android APK - Final Release)"
           make_latest: true
           body: |
-            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.4.1)
+            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.4.2)
 
             This is the **Final Production Standalone Release** containing the complete, consolidated India Meteorological Department (IMD) intelligence suite bundled into a **single, standalone APK file**.
 
             #### 📦 Single Direct Download:
-            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.4.1/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
+            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.4.2/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
 
-            #### 🔐 Clerk Cloud Authentication Fixes (v3.4.1):
+            #### 🚀 What's New in v3.4.2:
+            - **Official MAUSAM App Logo Everywhere**: Replaced placeholder icons with the official high-resolution MAUSAM crest both inside the application and as the Android Launcher Icon across all mipmap densities (MDPI to XXXHDPI) and adaptive icon layers.
+            - **Seamless In-App Google Sign-In (No Localhost Chrome Hangs)**: Fixed the issue where Google OAuth redirected to `localhost` in external Chrome. Configured `server.allowNavigation` for Google and Clerk domains, and dynamically stripped the `; wv` and `Version/4.0` WebView tokens in `MainActivity.java`, allowing Google OAuth to authenticate seamlessly directly inside the app WebView without getting stuck.
+            - **Native Deep Linking Scheme**: Added Android intent-filters for `mausam://` and `in.gov.imd.mausam://` with `@capacitor/app` event listeners, instantly routing callbacks into `/home`.
+            - **Single Unified Sign-In Experience**: Streamlined auth to a single sign page where "Sign in with Google" is front and center, accompanied by 1-Tap Instant Citizen Demo Access and no redundant signup tabs.
+
+            #### 🔐 Clerk Cloud Authentication Architecture:
             - **SafeClerkContext Bridge**: Eliminated React hook violations by bridging Clerk provider with safe context; zero unhandled errors when offline or across network boundaries.
             - **Official Clerk Sign-In & Sign-Up**: Integrated Clerk's official `<SignIn />` and `<SignUp />` embedded components alongside 1-tap modal triggers.
             - **True Auth Auto-Sync**: Eliminated premature navigation and mock data; now securely synchronizes verified Clerk user profile (name, email, avatar, ID) upon actual authentication completion.

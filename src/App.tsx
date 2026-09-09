@@ -1,7 +1,10 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { App as CapApp } from '@capacitor/app';
 import { BottomNavigation } from './components/layout/BottomNavigation';
 import { useAppStore } from './store/useAppStore';
+import { useSafeClerk } from './components/auth/useSafeClerk';
+import { deriveNameFromEmail } from './utils/userUtils';
 
 // Screens
 import { SplashScreen } from './pages/SplashScreen';
@@ -10,7 +13,6 @@ import { PersonaSelectScreen } from './pages/onboarding/PersonaSelectScreen';
 import { PersonaPreferencesScreen } from './pages/onboarding/PersonaPreferencesScreen';
 import { LocationSetupScreen } from './pages/onboarding/LocationSetupScreen';
 
-import { SignupScreen } from './pages/auth/SignupScreen';
 import { LoginScreen } from './pages/auth/LoginScreen';
 import { ForgotPasswordScreen } from './pages/auth/ForgotPasswordScreen';
 
@@ -36,6 +38,58 @@ import { EditProfileScreen } from './pages/settings/EditProfileScreen';
 import { ManagePersonasScreen } from './pages/settings/ManagePersonasScreen';
 import { ChangePasswordScreen } from './pages/settings/ChangePasswordScreen';
 
+// Native and OAuth Deep Linking & Session Sync Bridge
+const NativeAuthSync: React.FC = () => {
+  const navigate = useNavigate();
+  const setUser = useAppStore(state => state.setUser);
+  const selectedPersonas = useAppStore(state => state.selectedPersonas);
+  const preferences = useAppStore(state => state.preferences);
+  const { user: clerkUser, isSignedIn } = useSafeClerk();
+
+  // Listen for native deep links (mausam://, in.gov.imd.mausam://)
+  useEffect(() => {
+    let removeListener: (() => void) | null = null;
+    CapApp.addListener('appUrlOpen', (event) => {
+      console.log('App URL Opened via Native Intent:', event.url);
+      if (event.url.includes('home') || event.url.includes('callback') || event.url.includes('mausam')) {
+        navigate('/home', { replace: true });
+      }
+    }).then(sub => {
+      removeListener = () => sub.remove();
+    }).catch(err => {
+      console.warn('Native deep link listener registration error:', err);
+    });
+
+    return () => {
+      if (removeListener) removeListener();
+    };
+  }, [navigate]);
+
+  // Global auto-sync for Clerk authenticated state
+  useEffect(() => {
+    if (isSignedIn && clerkUser) {
+      const primaryEmail = clerkUser.primaryEmailAddress?.emailAddress 
+        || clerkUser.emailAddresses?.[0]?.emailAddress 
+        || 'citizen@mausam.in';
+      const clerkName = clerkUser.fullName 
+        || clerkUser.firstName 
+        || deriveNameFromEmail(primaryEmail);
+
+      setUser({
+        id: clerkUser.id,
+        email: primaryEmail,
+        fullName: clerkName,
+        avatarUrl: clerkUser.imageUrl,
+        selectedPersonas: selectedPersonas.length > 0 ? selectedPersonas : ['fitness', 'commuter', 'farmer', 'health'],
+        preferences,
+        hasCompletedTutorial: true,
+      });
+    }
+  }, [isSignedIn, clerkUser, setUser, selectedPersonas, preferences]);
+
+  return null;
+};
+
 export function App() {
   const refreshWeather = useAppStore(state => state.refreshWeather);
 
@@ -46,6 +100,7 @@ export function App() {
 
   return (
     <Router>
+      <NativeAuthSync />
       <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col justify-between select-none">
         <Routes>
           {/* Splash & Root */}
@@ -58,12 +113,12 @@ export function App() {
           <Route path="/onboarding/preferences" element={<PersonaPreferencesScreen />} />
           <Route path="/onboarding/location" element={<LocationSetupScreen />} />
 
-          {/* Auth Flow */}
-          <Route path="/auth/signup" element={<SignupScreen />} />
+          {/* Single Unified Auth Flow - Google & Citizen Fast Pass */}
+          <Route path="/auth/signup" element={<LoginScreen />} />
           <Route path="/auth/login" element={<LoginScreen />} />
           <Route path="/auth/forgot-password" element={<ForgotPasswordScreen />} />
           <Route path="/login" element={<LoginScreen />} />
-          <Route path="/signup" element={<SignupScreen />} />
+          <Route path="/signup" element={<LoginScreen />} />
           <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
 
           {/* Main App Routes with Bottom Navigation */}
