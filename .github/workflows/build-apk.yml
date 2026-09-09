@@ -76,7 +76,7 @@ jobs:
         run: |
           echo "Scanning for previous releases to purge..."
           gh release list --limit 100 --json tagName -q '.[].tagName' | while read tag; do
-            if [ "$tag" != "v3.3.0" ]; then
+            if [ "$tag" != "v3.4.0" ]; then
               echo "Removing obsolete release $tag so only single APK remains on GitHub..."
               gh release delete "$tag" --yes --cleanup-tag || true
             fi
@@ -86,23 +86,27 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.3.0
-          name: "MAUSAM Mega Unified App v3.3.0 (Official Single Android APK - Final Release)"
+          tag_name: v3.4.0
+          name: "MAUSAM Mega Unified App v3.4.0 (Official Single Android APK - Final Release)"
           make_latest: true
           body: |
-            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.3.0)
+            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.4.0)
 
             This is the **Final Production Standalone Release** containing the complete, consolidated India Meteorological Department (IMD) intelligence suite bundled into a **single, standalone APK file**.
 
             #### 📦 Single Direct Download:
-            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.3.0/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
+            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.4.0/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
 
-            #### 🧠 Full AI Engine Audit & Rectifications in v3.3.0:
-            - **M-BPNN v3.0 Canonical Neuron Training**: Fixed backpropagation gradient mapping so each persona's score maps precisely to its corresponding output neuron during online learning. Added interactive `Train Epoch (+1)` control in the Neural Inspector.
-            - **Safe Math & ML Scoring**: Eliminated `-Infinity` and `NaN` risks in offline personalization calculations when arrays are initializing or sparse.
-            - **Robust AI Assistant**: Added resilient fallbacks for daily outlook queries in `askMausamAI` ensuring zero crash probability under all network conditions.
-            - **Clean Mobile UX**: Replaced blocking alerts with non-blocking feedback and silent speech synthesis checks.
-            - **Single Standalone APK**: Automatically purges all legacy releases so GitHub contains strictly one clean `MAUSAM.apk` release artifact.
+            #### 🚨 Disaster & Calamity Auto-Alert Engine (NEW in v3.4.0):
+            - **Real-Time Threshold Evaluation**: After every weather refresh, the new `disasterAlertEngine` automatically evaluates fetched data against IMD/CPCB thresholds and populates `activeAlerts` — zero manual intervention needed.
+            - **10 Calamity Categories**: Cyclone (IMD grade: Cyclonic Storm / Severe CS / Very Severe CS), Flash Flood (>20 mm/hr), Thunderstorm (WMO codes 95/96/99), Heatwave (≥40°C plains), Cold Wave (≤10°C), Dense Fog (WMO 45/48), Dust Storm (>50 km/h in arid zones), Poor Air Quality (AQI ≥200 CPCB), Coastal/Marine Hazard (wave height ≥2m), Strong Wind (≥40 km/h).
+            - **Severity Grading**: Advisory → Watch → Warning → Emergency, matching IMD colour-code guidelines.
+            - **Coastal & Arid Zone Detection**: Geographic bounding boxes for Indian coastal belt and arid Rajasthan/Gujarat zones.
+            - **Deduplication**: Only one alert per category (highest severity wins), preventing redundant banners.
+            - **Persistent Dismissal**: User-dismissed alerts remain dismissed; auto-alerts regenerate on next refresh from live data.
+
+            #### 🧠 Full AI Engine Audit & Rectifications (from v3.3.0):
+            - M-BPNN v3.0 Canonical Neuron Training, Safe Math/ML Scoring, Robust AI Assistant, Clean Mobile UX.
 
             #### 🧠 M-BPNN v3.0 Backpropagation Neural Network Engine:
             - **3-Layer Multi-Layer Perceptron ($12 \to 8 \to 8$)**:
@@ -111,8 +115,7 @@ jobs:
               - Output Layer: 8 Persona Urgency & Personalization Logits
               - Learning Algorithm: Analytical Backpropagation of Error via Gradient Descent with Momentum ($\alpha = 0.85, \eta = 0.08$)
               - MSE Loss: $E = \frac{1}{2}\sum (y_k - \hat{y}_k)^2$
-              - On-device real-time learning: Adapts synaptic weights locally via user feedback (`👍 Helpful` / `👎 Refine`) with zero telemetry
-              - Interactive Neural Inspector: Live hidden layer neuron activation bars and manual backprop training epoch trigger
+              - On-device real-time learning: Adapts synaptic weights locally via user feedback with zero telemetry
 
             #### 🌦️ Live Precipitation Radar & IMD Doppler Stations:
             - RainViewer v2 tile cache API with dynamic hash paths

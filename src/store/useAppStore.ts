@@ -21,6 +21,7 @@ import {
   fetchWeatherData 
 } from '../services/weatherApi';
 import { deriveNameFromEmail } from '../utils/userUtils';
+import { generateDisasterAlerts } from '../services/disasterAlertEngine';
 
 interface AppState {
   // Auth & Profile
@@ -211,7 +212,7 @@ export const useAppStore = create<AppState>()(
       setTutorialCompleted: (val) => set({ hasCompletedTutorial: val }),
 
       refreshWeather: async () => {
-        const { currentLocation } = get();
+        const { currentLocation, dismissedAlertIds } = get();
         set({ isLoadingWeather: true, weatherError: null });
 
         try {
@@ -221,12 +222,30 @@ export const useAppStore = create<AppState>()(
             fetchMarineData(currentLocation.latitude, currentLocation.longitude),
           ]);
 
+          // Run disaster alert engine against fresh data
+          let generatedAlerts: SevereAlert[] = [];
+          try {
+            generatedAlerts = generateDisasterAlerts(
+              weatherRes.current,
+              weatherRes.hourly,
+              weatherRes.daily,
+              aqiRes,
+              marineRes,
+              currentLocation,
+              dismissedAlertIds || [],
+            );
+          } catch (_engineErr) {
+            // Non-fatal: continue without auto-alerts if engine throws
+            generatedAlerts = [];
+          }
+
           set({
             weather: weatherRes.current,
             hourly: weatherRes.hourly,
             daily: weatherRes.daily,
             airQuality: aqiRes,
             marine: marineRes,
+            activeAlerts: generatedAlerts,
             isLoadingWeather: false,
             lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           });
@@ -294,10 +313,10 @@ export const useAppStore = create<AppState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           // Auto-purge any legacy simulated test alerts or dismissed alerts from storage
+          // Auto-purge legacy simulated test alerts only; keep real auto-alerts
           if (Array.isArray(state.activeAlerts)) {
             state.activeAlerts = state.activeAlerts.filter(
-              a => !a.id.startsWith('alert_sim_') && 
-                   !a.title.toLowerCase().includes('cyclone') && 
+              a => !a.id.startsWith('alert_sim_') &&
                    !(state.dismissedAlertIds || []).includes(a.id)
             );
           } else {

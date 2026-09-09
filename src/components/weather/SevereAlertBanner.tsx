@@ -68,7 +68,7 @@ export const SevereAlertBanner: React.FC<SevereAlertBannerProps> = ({ alert }) =
               <span className={`text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full ${style.badge}`}>
                 {alert.severity}
               </span>
-              <span className="text-[11px] text-slate-600 font-semibold">IMD / Rapid Safety Desk</span>
+              <span className="text-[11px] text-slate-600 font-semibold">{alert.source}</span>
             </div>
             <h4 className="font-extrabold text-sm tracking-tight mt-0.5 line-clamp-1">{alert.title}</h4>
           </div>
