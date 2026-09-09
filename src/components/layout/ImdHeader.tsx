@@ -153,15 +153,12 @@ export const ImdHeader: React.FC = () => {
       <div className="px-3.5 pt-1.5 pb-2.5 border-b border-white/10 flex items-center justify-between">
         {/* Emblem & Official Title */}
         <div className="flex items-center gap-2.5">
-          {/* Meteorological Crest Badge */}
-          <div className="w-10 h-10 rounded-xl bg-white p-1.5 flex items-center justify-center shadow-lg shrink-0 border border-slate-200">
-            <svg viewBox="0 0 100 100" className="w-full h-full" fill="none">
-              <circle cx="50" cy="50" r="46" fill="#082046" />
-              <circle cx="62" cy="38" r="16" fill="#FFD54F" />
-              <path d="M30 68 h40 a14 14 0 0 0 0 -28 a20 20 0 0 0 -36 -4 a12 12 0 0 0 -16 12 a12 12 0 0 0 12 20 z" fill="#FFFFFF" />
-              <path d="M36 74 l-4 8 M48 74 l-4 8 M60 74 l-4 8" stroke="#00B0FF" strokeWidth="3" strokeLinecap="round" />
-            </svg>
-          </div>
+          {/* Official Mausam App Crest Badge */}
+          <img 
+            src="/images/mausam_logo.png" 
+            alt="Mausam App Official Logo" 
+            className="w-10 h-10 rounded-xl object-contain shadow-md shrink-0 border border-white/20 bg-white p-0.5" 
+          />
 
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
