@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
-  Layers, 
   Navigation, 
   Plus, 
   Minus, 
@@ -12,11 +11,9 @@ import {
   CloudRain, 
   Activity,
   Satellite as SatelliteIcon,
-  MapPin,
   Play,
   Pause,
-  Sliders,
-  AlertTriangle
+  Sliders
 } from 'lucide-react';
 import L from 'leaflet';
 import { MobileContainer } from '../components/layout/MobileContainer';
@@ -36,7 +33,6 @@ export const MapScreen: React.FC = () => {
   const tomtomTileLayerRef = useRef<L.TileLayer | null>(null);
 
   const [activeLayer, setActiveLayer] = useState<WeatherLayerType>('traffic');
-  const [showLegend, setShowLegend] = useState<boolean>(true);
   const [satOpacity, setSatOpacity] = useState<number>(0.85);
   const [tomtomApiKey] = useState<string>(() => localStorage.getItem('mausam_tomtom_key') || import.meta.env.VITE_TOMTOM_API_KEY || '0VGms4e2HWfXZ767rZ1weQR64LyEqgI6');
   const [isTimelinePlaying, setIsTimelinePlaying] = useState<boolean>(false);
@@ -454,7 +450,7 @@ export const MapScreen: React.FC = () => {
           html: `
             <div class="flex items-center gap-1 bg-white/95 px-2 py-0.5 rounded-full border border-slate-300 shadow-md text-[10px] font-bold text-slate-800">
               <span style="transform: rotate(${w.deg}deg); display: inline-block;">➔</span>
-              <span class="text-sky-700">${w.speed} km/h</span>
+              <span style="color: ${color}; font-weight: 800;">${w.speed} km/h</span>
             </div>
           `,
           iconSize: [85, 24],

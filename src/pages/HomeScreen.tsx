@@ -6,19 +6,14 @@ import {
   ChevronRight, 
   SlidersHorizontal,
   ArrowUpRight,
-  Cpu,
   Volume2,
   VolumeX,
-  Info,
   X,
   Activity,
-  PhoneCall,
   CheckCircle2,
   ShieldCheck,
   BarChart2,
-  Brain,
   RefreshCw,
-  Layers,
 } from 'lucide-react';
 import { MobileContainer } from '../components/layout/MobileContainer';
 import { ImdHeader } from '../components/layout/ImdHeader';
@@ -30,7 +25,7 @@ import { TutorialOverlay } from '../components/weather/TutorialOverlay';
 import { useAppStore } from '../store/useAppStore';
 import { generateSmartBrief } from '../services/aiService';
 import { runOfflineMlPersonalization } from '../services/mlPersonalizationEngine';
-import { MausamNeuralNetwork } from '../services/neuralNetPersonalization';
+import { MausamNeuralNetwork, ALL_PERSONAS } from '../services/neuralNetPersonalization';
 
 export const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -59,7 +54,6 @@ export const HomeScreen: React.FC = () => {
   // Audio Voice Weather Briefing (Web Speech API)
   const toggleSpeech = () => {
     if (!('speechSynthesis' in window)) {
-      alert('Text-to-speech audio is not supported in this browser.');
       return;
     }
     if (isSpeaking) {
@@ -93,7 +87,7 @@ export const HomeScreen: React.FC = () => {
 
   // Generate Smart Brief
   useEffect(() => {
-    if (weather && hourly.length > 0) {
+    if (weather) {
       setLoadingBrief(true);
       generateSmartBrief({
         userName: user?.fullName?.split(' ')[0] || 'Citizen',
@@ -105,6 +99,8 @@ export const HomeScreen: React.FC = () => {
         locationName: currentLocation.name,
       }).then(text => {
         setSmartBrief(text);
+        setLoadingBrief(false);
+      }).catch(() => {
         setLoadingBrief(false);
       });
     }
@@ -124,7 +120,7 @@ export const HomeScreen: React.FC = () => {
     });
   }, [weather, hourly, daily, airQuality, marine, selectedPersonas, preferences, mlRefreshCount]);
 
-  // On-Device Multi-Layer Perceptron Backpropagation Neural Network (M-BPNN v3.0)
+  // On-Device Neural Network Inference with Backpropagation (M-BPNN v3.0)
   const neuralResult = useMemo(() => {
     if (!weather) return null;
     return MausamNeuralNetwork.getInstance().predict({
@@ -155,8 +151,12 @@ export const HomeScreen: React.FC = () => {
   const handleLiveTrainStep = () => {
     if (!neuralResult) return;
     const nn = MausamNeuralNetwork.getInstance();
-    // Simulate user reinforcement target: boost top ranked scores
-    const targetOutputs = neuralResult.scores.map(s => Math.min(0.96, Math.max(0.15, (s.neuralScore + 4) / 100)));
+    // User reinforcement target mapped directly to each canonical output neuron
+    const targetOutputs = ALL_PERSONAS.map(p => {
+      const match = neuralResult.scores.find(s => s.persona === p);
+      const score = match ? match.neuralScore : 50;
+      return Math.min(0.96, Math.max(0.15, (score + 5) / 100));
+    });
     nn.trainBackpropagation(neuralResult.featureVector, targetOutputs);
     setMlRefreshCount(c => c + 1);
   };
@@ -272,7 +272,7 @@ export const HomeScreen: React.FC = () => {
       titleColor: 'text-emerald-800',
       icon: <CheckCircle2 className="w-4 h-4 text-emerald-600" />,
     };
-  }, [weather, currentLocation]);
+  }, [weather, currentLocation, hourly]);
 
   const displayTemp = (celsius: number) => {
     if (temperatureUnit === 'fahrenheit') {
@@ -782,6 +782,15 @@ export const HomeScreen: React.FC = () => {
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Reset to Default</span>
+              </button>
+
+              <button
+                onClick={handleLiveTrainStep}
+                className="text-[11px] text-amber-300 hover:text-amber-100 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-950/60 border border-amber-500/30 transition-colors"
+                title="Train backpropagation epoch"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Train Epoch (+1)</span>
               </button>
 
               <button

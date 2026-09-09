@@ -10,6 +10,8 @@ export const ArticleDetailScreen: React.FC = () => {
 
   const article = EXPLORE_ARTICLES.find(a => a.id === id) || EXPLORE_ARTICLES[0];
 
+  const [copiedToast, setCopiedToast] = React.useState(false);
+
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
@@ -17,9 +19,11 @@ export const ArticleDetailScreen: React.FC = () => {
         text: article.summary,
         url: window.location.href,
       }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        setCopiedToast(true);
+        setTimeout(() => setCopiedToast(false), 2000);
+      }).catch(() => {});
     }
   };
 
@@ -38,7 +42,7 @@ export const ArticleDetailScreen: React.FC = () => {
         </button>
 
         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-          MAUSAM Editorial
+          {copiedToast ? <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">Link Copied!</span> : 'MAUSAM Editorial'}
         </span>
 
         <button

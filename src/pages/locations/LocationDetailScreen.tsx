@@ -4,12 +4,6 @@ import {
   ArrowLeft, 
   MapPin, 
   Plus, 
-  Check, 
-  Droplets, 
-  Wind, 
-  Sun, 
-  Calendar, 
-  Activity, 
   Home 
 } from 'lucide-react';
 import { MobileContainer } from '../../components/layout/MobileContainer';
@@ -55,6 +49,16 @@ export const LocationDetailScreen: React.FC = () => {
   }, [locationId, savedLocations]);
 
   if (!locData) return null;
+  if (isLoading && !weather) {
+    return (
+      <MobileContainer hasBottomNav={false} className="p-4 flex items-center justify-center min-h-screen bg-[#F8FAFC]">
+        <div className="text-center space-y-2">
+          <div className="w-8 h-8 border-2 border-[#0E468A] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-500 font-bold">Loading station telemetry...</p>
+        </div>
+      </MobileContainer>
+    );
+  }
 
   const isAlreadySaved = savedLocations.some(l => l.id === locData.id);
 

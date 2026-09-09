@@ -35,7 +35,7 @@ const DEFAULT_SUGGESTIONS = [
 
 export const AssistantScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { currentLocation, weather, daily, hourly, selectedPersonas, preferences } = useAppStore();
+  const { currentLocation, weather, daily, hourly, selectedPersonas } = useAppStore();
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -131,7 +131,6 @@ export const AssistantScreen: React.FC = () => {
 
   const handleVoiceInput = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert('Speech recognition is not supported in your browser.');
       return;
     }
 

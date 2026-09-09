@@ -115,8 +115,12 @@ export function runOfflineMlPersonalization(params: {
   const weights = getLocalWeights();
 
   const discomfortIndex = calculateDiscomfortIndex(weather.temperature, weather.humidity);
-  const next6HoursRain = hourly.slice(0, 6).some(h => h.precipitationProbability >= 40);
-  const maxRainProbNext6h = Math.max(0, ...hourly.slice(0, 6).map(h => h.precipitationProbability));
+  const next6HoursRain = hourly.length > 0
+    ? hourly.slice(0, 6).some(h => (Number(h.precipitationProbability) || 0) >= 40)
+    : (weather.precipitation > 0.5);
+  const maxRainProbNext6h = hourly.length > 0
+    ? Math.max(0, ...hourly.slice(0, 6).map(h => Number(h.precipitationProbability) || 0))
+    : (weather.precipitation > 0.5 ? 60 : 0);
   const maxTempToday = daily[0]?.maxTemp || weather.temperature + 3;
   const minTempToday = daily[0]?.minTemp || weather.temperature - 4;
   const aqiVal = airQuality?.aqi || 65;

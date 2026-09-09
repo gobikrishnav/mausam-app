@@ -167,7 +167,7 @@ export class MausamNeuralNetwork {
     const waveHeight = marine?.waveHeight || 0.8;
     const normMarine = Math.max(0, Math.min(1, waveHeight / 4));
     const normPressure = Math.max(0, Math.min(1, (weather.pressure - 980) / 40));
-    const affinityRatio = Math.max(0.2, Math.min(1.0, selectedPersonas.length / 8));
+    const affinityRatio = Math.max(0.2, Math.min(1.0, (selectedPersonas?.length || 1) / 8));
 
     const vector = [
       parseFloat(normTemp.toFixed(3)),
@@ -402,7 +402,12 @@ export class MausamNeuralNetwork {
         const raw = localStorage.getItem(NEURAL_STORAGE_KEY);
         if (raw) {
           const data = JSON.parse(raw);
-          if (data.W1 && data.W2 && data.b1 && data.b2) {
+          if (
+            Array.isArray(data.W1) && data.W1.length === 12 &&
+            Array.isArray(data.W2) && data.W2.length === 8 &&
+            Array.isArray(data.b1) && data.b1.length === 8 &&
+            Array.isArray(data.b2) && data.b2.length === 8
+          ) {
             this.W1 = data.W1;
             this.b1 = data.b1;
             this.W2 = data.W2;

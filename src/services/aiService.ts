@@ -51,8 +51,12 @@ Give specific, time-contextual advice based on their active personas. Plain lang
   }
 
   // Intelligent local dynamic narrative generator
-  const rainNext6Hours = hourly.slice(0, 6).some(h => h.precipitationProbability >= 40);
-  const maxTempToday = Math.max(...hourly.slice(0, 12).map(h => h.temperature));
+  const rainNext6Hours = hourly.length > 0 
+    ? hourly.slice(0, 6).some(h => (Number(h.precipitationProbability) || 0) >= 40)
+    : (weather.precipitation > 0.5);
+  const maxTempToday = hourly.length > 0 
+    ? Math.max(...hourly.slice(0, 12).map(h => h.temperature)) 
+    : (weather.temperature || 30);
   const aqiVal = airQuality?.aqi || 65;
 
   let advice = '';
@@ -208,7 +212,12 @@ Keep answers punchy, empathetic, and directly actionable in 2-3 sentences.`,
 
   // 6. Tomorrow's Outlook
   if (qLower.includes('tomorrow')) {
-    const tm = daily[1] || daily[0];
+    const tm = daily[1] || daily[0] || {
+      conditionText: weather.conditionText || 'Clear',
+      maxTemp: weather.temperature ? weather.temperature + 2 : 32,
+      minTemp: weather.temperature ? weather.temperature - 4 : 22,
+      precipitationProbability: 10,
+    };
     return {
       reply: `Tomorrow in ${locationName} will see ${tm.conditionText.toLowerCase()} conditions with a high of ${tm.maxTemp}°C and a low of ${tm.minTemp}°C. Rain likelihood stands at ${tomorrowRain}%.`,
       contextSnippet: { temp: tm.maxTemp, condition: tm.conditionText, rainChance: tomorrowRain }
