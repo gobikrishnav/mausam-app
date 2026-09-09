@@ -13,13 +13,9 @@ import {
   Activity,
   Satellite as SatelliteIcon,
   MapPin,
-  X,
-  Key,
-  Info,
   Play,
   Pause,
   Sliders,
-  CheckCircle2,
   AlertTriangle
 } from 'lucide-react';
 import L from 'leaflet';
@@ -42,9 +38,7 @@ export const MapScreen: React.FC = () => {
   const [activeLayer, setActiveLayer] = useState<WeatherLayerType>('traffic');
   const [showLegend, setShowLegend] = useState<boolean>(true);
   const [satOpacity, setSatOpacity] = useState<number>(0.85);
-  const [showApiModal, setShowApiModal] = useState<boolean>(false);
-  const [tomtomApiKey, setTomtomApiKey] = useState<string>(() => localStorage.getItem('mausam_tomtom_key') || import.meta.env.VITE_TOMTOM_API_KEY || '0VGms4e2HWfXZ767rZ1weQR64LyEqgI6');
-  const [tempApiKeyInput, setTempApiKeyInput] = useState<string>(() => localStorage.getItem('mausam_tomtom_key') || import.meta.env.VITE_TOMTOM_API_KEY || '0VGms4e2HWfXZ767rZ1weQR64LyEqgI6');
+  const [tomtomApiKey] = useState<string>(() => localStorage.getItem('mausam_tomtom_key') || import.meta.env.VITE_TOMTOM_API_KEY || '0VGms4e2HWfXZ767rZ1weQR64LyEqgI6');
   const [isTimelinePlaying, setIsTimelinePlaying] = useState<boolean>(false);
   const [rainViewerHost, setRainViewerHost] = useState<string>('https://tilecache.rainviewer.com');
   const [radarFrames, setRadarFrames] = useState<Array<{ time: number; path: string }>>([]);
@@ -554,12 +548,6 @@ export const MapScreen: React.FC = () => {
     }
   };
 
-  const handleSaveApiKey = () => {
-    localStorage.setItem('mausam_tomtom_key', tempApiKeyInput.trim());
-    setTomtomApiKey(tempApiKeyInput.trim());
-    setShowApiModal(false);
-  };
-
   // Layer details configuration
   const getLayerMeta = () => {
     switch (activeLayer) {
@@ -666,15 +654,9 @@ export const MapScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* API Key Modal Button */}
-          <button
-            onClick={() => setShowApiModal(true)}
-            className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 transition-all shadow-xs"
-            title="Map API Configuration & Documentation"
-          >
-            <Key className="w-3.5 h-3.5 text-[#0E468A]" />
-            <span>API Keys</span>
-          </button>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+            IMD Radar
+          </span>
         </div>
 
         {/* Floating Horizontal Layer Selector Pills */}
@@ -797,102 +779,13 @@ export const MapScreen: React.FC = () => {
             ))}
           </div>
 
-          {/* API Transparency footnote */}
-          <div className="flex items-center justify-between text-[9px] text-slate-500 pt-1 border-t border-slate-100">
-            <span className="truncate max-w-[280px]">Provider: {meta.apiKeyReq}</span>
-            <button
-              onClick={() => setShowApiModal(true)}
-              className="text-[#0E468A] font-bold hover:underline"
-            >
-              Learn More
-            </button>
+          {/* Official Meteorological Data Attribution */}
+          <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-100">
+            <span>India Meteorological Department • MoES</span>
+            <span className="font-semibold text-[#0E468A]">Live GIS Layer</span>
           </div>
         </div>
       </div>
-
-      {/* Map API Key & Documentation Modal */}
-      {showApiModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-5 max-w-sm w-full space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-blue-50 text-[#0E468A]">
-                  <Key className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-sm text-slate-900">Map APIs & Key Setup</h3>
-                  <span className="text-[10px] text-slate-500 font-medium">Transparency & Configuration</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowApiModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* API Breakdown Table */}
-            <div className="space-y-2 text-xs">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 space-y-1 text-emerald-900">
-                <div className="flex items-center gap-1.5 font-bold">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>100% Free & Open APIs (No Keys Needed)</span>
-                </div>
-                <ul className="text-[11px] list-disc list-inside space-y-0.5 text-emerald-800">
-                  <li><strong>Base Geography:</strong> CartoDB Voyager & OpenStreetMap</li>
-                  <li><strong>Rain & Precipitation:</strong> RainViewer Live Precipitation Tiles</li>
-                  <li><strong>Satellite:</strong> INSAT-3DS Thermal Infrared (ISRO/IMD)</li>
-                  <li><strong>Temp, Wind & AQI:</strong> Open-Meteo & CPCB Open Data</li>
-                </ul>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-1.5 text-blue-950">
-                <div className="flex items-center gap-1.5 font-bold">
-                  <Info className="w-4 h-4 text-blue-700" />
-                  <span>Commercial Traffic API (Optional)</span>
-                </div>
-                <p className="text-[11px] text-blue-800 leading-relaxed">
-                  For commercial live vehicle telemetry, Leaflet uses the <strong>TomTom Traffic API</strong>. TomTom provides <strong>2,500 free requests per day</strong> with no credit card required at <code>developer.tomtom.com</code>.
-                </p>
-                <p className="text-[10px] text-blue-700 font-medium">
-                  <em>Note: When left blank, MAUSAM automatically runs its built-in High-Fidelity Traffic Vector Engine across all Indian arterial highways!</em>
-                </p>
-              </div>
-
-              {/* Input for TomTom Key */}
-              <div className="space-y-1.5 pt-1">
-                <label className="text-[11px] font-bold text-slate-700 block">
-                  TomTom Traffic API Key (Optional):
-                </label>
-                <input
-                  type="text"
-                  placeholder="Paste your TomTom API key..."
-                  value={tempApiKeyInput}
-                  onChange={(e) => setTempApiKeyInput(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0E468A]"
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-              <button
-                onClick={() => setShowApiModal(false)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveApiKey}
-                className="flex-1 py-2.5 rounded-xl bg-[#0E468A] text-white text-xs font-bold shadow-md hover:bg-[#082046] transition-colors"
-              >
-                Save Settings
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </MobileContainer>
   );
 };

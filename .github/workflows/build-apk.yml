@@ -75,16 +75,16 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.0
-          name: "MAUSAM Mega Unified App v3.0.0 (Official Single Android APK)"
+          tag_name: v3.1.0
+          name: "MAUSAM Mega Unified App v3.1.0 (Official Single Android APK)"
           make_latest: true
           body: |
-            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.0.0)
+            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.1.0)
 
             This is the **Mega Single Project** release containing the complete, consolidated India Meteorological Department (IMD) intelligence suite bundled into a **single, standalone APK file**.
 
             #### 📦 Single Direct Download:
-            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.0.0/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
+            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.1.0/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
 
             #### 🧠 M-BPNN v3.0 Backpropagation Neural Network Engine:
             - **3-Layer Multi-Layer Perceptron ($12 \to 8 \to 8$)**:

@@ -1,6 +1,6 @@
 # 🇮🇳 MAUSAM (मौसम): Mega Unified Meteorological Intelligence Platform
 
-[![Android Release](https://img.shields.io/badge/Android%20APK-v3.0.0-0E468A?style=for-the-badge&logo=android&logoColor=white)](https://github.com/gobikrishnav/mausam-app/releases/tag/v3.0.0)
+[![Android Release](https://img.shields.io/badge/Android%20APK-v3.1.0-0E468A?style=for-the-badge&logo=android&logoColor=white)](https://github.com/gobikrishnav/mausam-app/releases/tag/v3.1.0)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/gobikrishnav/mausam-app/build-apk.yml?branch=main&style=for-the-badge)](https://github.com/gobikrishnav/mausam-app/actions)
 [![License](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](LICENSE)
 
@@ -14,7 +14,7 @@
 
 Download the signed, production-ready Android APK directly to your phone:
 
-➡️ **[Download Single APK: MAUSAM.apk (4.02 MB)](https://github.com/gobikrishnav/mausam-app/releases/download/v3.0.0/MAUSAM.apk)** *(Latest Release v3.0.0)*
+➡️ **[Download Single APK: MAUSAM.apk (4.02 MB)](https://github.com/gobikrishnav/mausam-app/releases/download/v3.1.0/MAUSAM.apk)** *(Latest Release v3.1.0)*
 
 *Requires Android 7.0+ (API level 24 to 35). Universal compatibility across all Android devices.*
 
@@ -77,6 +77,7 @@ Download the signed, production-ready Android APK directly to your phone:
 | **GIS & Radar Mapping** | Leaflet 1.9 + RainViewer Doppler API + OpenStreetMap |
 | **Data Visualization** | Recharts 3.1 (Hourly area charts, 10-day daily trends) |
 | **State Management** | Zustand (Persistent local storage & offline rehydration) |
+| **Data Persistence** | **Zero-Database / Local-First** (`localStorage` + PWA Cache Storage) |
 | **Identity & SSO** | Clerk Cloud Auth (`@clerk/clerk-react`) |
 | **Machine Learning** | M-BPNN v3.0 (On-device Backpropagation Neural Network) |
 | **CI/CD Pipeline** | GitHub Actions (Automated build and release workflow) |
