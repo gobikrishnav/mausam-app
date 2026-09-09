@@ -109,19 +109,19 @@ export const SettingsScreen: React.FC = () => {
                 {initials}
               </div>
             )}
-            <div>
+            <div className="min-w-0 flex-1 pr-2">
               <div className="flex items-center gap-1.5">
-                <h3 className="font-extrabold text-sm text-slate-900">
+                <h3 className="font-extrabold text-sm text-slate-900 truncate">
                   {displayName}
                 </h3>
-                <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-bold">
+                <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-bold shrink-0">
                   {clerkUser ? 'Clerk Verified' : 'Active Account'}
                 </span>
               </div>
-              <span className="text-xs text-slate-500 font-medium block">
+              <span className="text-xs text-slate-500 font-medium block truncate">
                 {clerkUser?.primaryEmailAddress?.emailAddress || user?.email || 'citizen@mausam.gov.in'}
               </span>
-              <span className="text-[10px] text-[#0E468A] font-bold block mt-0.5">
+              <span className="text-[10px] text-[#0E468A] font-bold block mt-0.5 truncate">
                 {clerkUser ? 'Managed via Clerk Cloud Auth' : 'Local / Offline Profile'}
               </span>
             </div>

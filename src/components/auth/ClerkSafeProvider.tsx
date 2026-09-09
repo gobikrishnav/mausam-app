@@ -1,8 +1,50 @@
-import React, { Component, ReactNode } from 'react';
-import { ClerkProvider } from '@clerk/react';
+import React, { Component, ReactNode, createContext } from 'react';
+import { ClerkProvider, useClerk, useUser } from '@clerk/react';
 
 // Default Clerk Publishable Key for immediate out-of-the-box operation
 export const DEFAULT_CLERK_KEY = 'pk_test_bW9yZS1tYXJtb3NldC0zNC5jbGVyay5hY2NvdW50cy5kZXYk';
+
+export interface SafeClerkState {
+  isAvailable: boolean;
+  isLoaded: boolean;
+  isSignedIn: boolean;
+  user: any;
+  clerk: any;
+  openSignIn?: (props?: any) => void;
+  openSignUp?: (props?: any) => void;
+  signOut: () => Promise<void>;
+}
+
+export const SafeClerkContext = createContext<SafeClerkState>({
+  isAvailable: false,
+  isLoaded: true,
+  isSignedIn: false,
+  user: null,
+  clerk: null,
+  signOut: async () => {},
+});
+
+const ClerkBridge: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const clerk = useClerk();
+  const userContext = useUser();
+
+  const value: SafeClerkState = {
+    isAvailable: true,
+    clerk,
+    isLoaded: userContext.isLoaded,
+    isSignedIn: !!userContext.isSignedIn,
+    user: userContext.user,
+    openSignIn: (props?: any) => clerk.openSignIn?.(props),
+    openSignUp: (props?: any) => clerk.openSignUp?.(props),
+    signOut: () => clerk.signOut?.(),
+  };
+
+  return (
+    <SafeClerkContext.Provider value={value}>
+      {children}
+    </SafeClerkContext.Provider>
+  );
+};
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -25,7 +67,7 @@ class ClerkErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryStat
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.warn('ClerkProvider error caught, falling back smoothly to native app auth:', error.message);
+    console.warn('ClerkProvider error caught, falling back smoothly to native app auth:', error.message, errorInfo);
   }
 
   render() {
@@ -40,20 +82,42 @@ export const ClerkSafeProvider: React.FC<{ children: ReactNode }> = ({ children 
   const customKey = typeof window !== 'undefined' ? localStorage.getItem('mausam_clerk_key') : null;
   const publishableKey = customKey || import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || DEFAULT_CLERK_KEY;
 
+  const fallbackContext: SafeClerkState = {
+    isAvailable: false,
+    isLoaded: true,
+    isSignedIn: false,
+    user: null,
+    clerk: null,
+    signOut: async () => {},
+  };
+
   if (!publishableKey) {
-    return <>{children}</>;
+    return (
+      <SafeClerkContext.Provider value={fallbackContext}>
+        {children}
+      </SafeClerkContext.Provider>
+    );
   }
 
   return (
-    <ClerkErrorBoundary fallback={<>{children}</>}>
+    <ClerkErrorBoundary
+      fallback={
+        <SafeClerkContext.Provider value={fallbackContext}>
+          {children}
+        </SafeClerkContext.Provider>
+      }
+    >
       <ClerkProvider 
         publishableKey={publishableKey} 
         signInFallbackRedirectUrl="/home"
         signUpFallbackRedirectUrl="/home"
         afterSignOutUrl="/"
       >
-        {children}
+        <ClerkBridge>
+          {children}
+        </ClerkBridge>
       </ClerkProvider>
     </ClerkErrorBoundary>
   );
 };
+

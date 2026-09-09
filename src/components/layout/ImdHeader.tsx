@@ -150,40 +150,40 @@ export const ImdHeader: React.FC = () => {
   return (
     <header className="bg-gradient-to-r from-[#061938] via-[#082046] to-[#0E468A] text-white border-b border-white/15 shadow-xl select-none sticky top-0 z-30 pt-safe-top">
       {/* Top Ministry & National Emblem Banner (100% Clean English) */}
-      <div className="px-3.5 pt-1.5 pb-2.5 border-b border-white/10 flex items-center justify-between">
+      <div className="px-3 sm:px-3.5 pt-1.5 pb-2 border-b border-white/10 flex items-center justify-between gap-1.5">
         {/* Emblem & Official Title */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           {/* Official Mausam App Crest Badge */}
           <img 
             src="/images/mausam_logo.png" 
             alt="Mausam App Official Logo" 
-            className="w-10 h-10 rounded-xl object-contain shadow-md shrink-0 border border-white/20 bg-white p-0.5" 
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-contain shadow-md shrink-0 border border-white/20 bg-white p-0.5" 
           />
 
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0 pr-1">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-extrabold tracking-tight text-white leading-none">
+              <span className="text-xs sm:text-sm font-black tracking-tight text-white leading-none">
                 MAUSAM
               </span>
-              <span className="px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[9px] font-black rounded uppercase tracking-wider">
+              <span className="px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[8px] sm:text-[9px] font-black rounded uppercase tracking-wider shrink-0">
                 IMD PRO
               </span>
             </div>
-            <span className="text-[10px] text-sky-200 font-semibold tracking-tight mt-0.5 leading-none">
-              INDIA METEOROLOGICAL DEPARTMENT
+            <span className="text-[9px] sm:text-[10px] text-sky-200 font-semibold tracking-tight mt-0.5 leading-none truncate max-w-[150px] xs:max-w-none">
+              INDIA METEOROLOGICAL DEPT
             </span>
-            <span className="text-[8px] text-slate-300 uppercase tracking-tight leading-none mt-0.5">
-              Ministry of Earth Sciences • Government of India
+            <span className="text-[8px] text-slate-300 uppercase tracking-tight leading-none mt-0.5 truncate hidden xs:block">
+              Ministry of Earth Sciences • Govt of India
             </span>
           </div>
         </div>
 
         {/* Action icons & Auth Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => refreshWeather()}
             disabled={isLoadingWeather}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 active:scale-95"
+            className="p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 active:scale-95"
             title="Refresh Live Station Observation"
             aria-label="Refresh"
           >
@@ -193,7 +193,7 @@ export const ImdHeader: React.FC = () => {
           {isAuthenticated && user ? (
             <button
               onClick={() => navigate('/settings')}
-              className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 transition-all active:scale-95"
+              className="flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 transition-all active:scale-95"
               title="Profile & Settings"
             >
               {avatarUrl ? (
@@ -207,14 +207,14 @@ export const ImdHeader: React.FC = () => {
                   {initials}
                 </div>
               )}
-              <span className="text-[10px] font-bold text-sky-100 max-w-[75px] truncate">
+              <span className="text-[10px] font-bold text-sky-100 max-w-[55px] xs:max-w-[75px] truncate">
                 {displayName}
               </span>
             </button>
           ) : (
             <button
               onClick={() => navigate('/auth/login')}
-              className="px-2.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-[11px] shadow-xs transition-all active:scale-95 flex items-center gap-1"
+              className="px-2.5 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-[11px] shadow-xs transition-all active:scale-95 flex items-center gap-1"
             >
               <User className="w-3.5 h-3.5" />
               <span>Login</span>
@@ -224,24 +224,24 @@ export const ImdHeader: React.FC = () => {
       </div>
 
       {/* District / Station Selector Bar */}
-      <div className="px-3.5 py-2 flex items-center justify-between bg-black/25 backdrop-blur-md text-xs">
+      <div className="px-3 sm:px-3.5 py-1.5 sm:py-2 flex items-center justify-between bg-black/25 backdrop-blur-md text-xs gap-2">
         <button
           type="button"
           onClick={() => setShowLocationPicker(true)}
-          className="flex items-center gap-1.5 hover:text-sky-200 transition-colors text-left group cursor-pointer"
+          className="flex items-center gap-1.5 hover:text-sky-200 transition-colors text-left group cursor-pointer min-w-0 flex-1 truncate"
         >
           <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
-          <div className="flex items-center gap-1.5">
-            <span className="font-extrabold text-white text-xs">{currentLocation.name}</span>
-            <span className="text-[10px] text-sky-200 font-medium">({currentLocation.region || 'Met Sub-Division'})</span>
-            <span className="text-[9px] bg-amber-400 text-slate-950 font-bold px-1.5 py-0.5 rounded shadow-xs">
+          <div className="flex items-center gap-1.5 truncate min-w-0">
+            <span className="font-extrabold text-white text-xs truncate max-w-[110px] xs:max-w-[150px]">{currentLocation.name}</span>
+            <span className="text-[10px] text-sky-200 font-medium truncate hidden xs:inline">({currentLocation.region || 'Met Sub-Division'})</span>
+            <span className="text-[9px] bg-amber-400 text-slate-950 font-bold px-1.5 py-0.2 rounded shadow-xs shrink-0">
               Change ▾
             </span>
           </div>
         </button>
 
         {/* Live Observation Timestamp */}
-        <div className="flex items-center gap-1 text-[10px] text-sky-200 font-mono">
+        <div className="flex items-center gap-1 text-[10px] text-sky-200 font-mono shrink-0 whitespace-nowrap">
           <Radio className="w-2.5 h-2.5 text-emerald-400 animate-pulse" />
           <span>{istTime || 'Live IST'}</span>
         </div>

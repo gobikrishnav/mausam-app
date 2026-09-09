@@ -344,17 +344,17 @@ export const HomeScreen: React.FC = () => {
                     {weather.conditionText}
                   </h3>
 
-                  <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 mt-1">
+                  <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-[11px] font-semibold text-slate-600 mt-1">
                     <span>Max: <strong className="text-[#C62828]">{displayTemp(todayMax)}</strong></span>
                     <span>•</span>
                     <span>Min: <strong className="text-[#1976D2]">{displayTemp(todayMin)}</strong></span>
                     <span>•</span>
-                    <span>Dew Point: <strong>{displayTemp(weather.dewPoint)}</strong></span>
+                    <span>Dew: <strong>{displayTemp(weather.dewPoint)}</strong></span>
                   </div>
                 </div>
 
                 {/* Quick Air Quality Badge */}
-                <div className="text-right flex flex-col items-end">
+                <div className="text-right flex flex-col items-end shrink-0 pl-1">
                   <div className="p-2 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col items-center">
                     <span className="text-[9px] uppercase font-bold text-slate-500">Air Quality</span>
                     <span className="text-xs font-extrabold text-emerald-700">AQI {airQuality?.aqi || 68}</span>
@@ -364,35 +364,35 @@ export const HomeScreen: React.FC = () => {
               </div>
 
               {/* High-Efficiency Station Parameters Grid */}
-              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100">
-                <div className="bg-slate-50/90 rounded-xl p-2.5 border border-slate-200/80 text-center">
-                  <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Humidity</span>
-                  <span className="text-sm font-extrabold text-slate-900 mt-0.5 block">{weather.humidity}%</span>
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-2 border-t border-slate-100">
+                <div className="bg-slate-50/90 rounded-xl p-2 sm:p-2.5 border border-slate-200/80 text-center overflow-hidden">
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold block uppercase tracking-wider truncate">Humidity</span>
+                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block truncate">{weather.humidity}%</span>
                 </div>
 
-                <div className="bg-slate-50/90 rounded-xl p-2.5 border border-slate-200/80 text-center">
-                  <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">24h Rainfall</span>
-                  <span className="text-sm font-extrabold text-sky-700 mt-0.5 block">{weather.precipitation} mm</span>
+                <div className="bg-slate-50/90 rounded-xl p-2 sm:p-2.5 border border-slate-200/80 text-center overflow-hidden">
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold block uppercase tracking-wider truncate">24h Rain</span>
+                  <span className="text-xs sm:text-sm font-extrabold text-sky-700 mt-0.5 block truncate">{weather.precipitation} mm</span>
                 </div>
 
-                <div className="bg-slate-50/90 rounded-xl p-2.5 border border-slate-200/80 text-center">
-                  <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Pressure (MSLP)</span>
-                  <span className="text-sm font-extrabold text-slate-900 mt-0.5 block">{weather.pressure} hPa</span>
+                <div className="bg-slate-50/90 rounded-xl p-2 sm:p-2.5 border border-slate-200/80 text-center overflow-hidden">
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold block uppercase tracking-wider truncate">Pressure</span>
+                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block truncate">{weather.pressure} hPa</span>
                 </div>
 
-                <div className="bg-slate-50/90 rounded-xl p-2.5 border border-slate-200/80 text-center">
-                  <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Wind Speed</span>
-                  <span className="text-sm font-extrabold text-slate-900 mt-0.5 block">{weather.windSpeed} km/h</span>
+                <div className="bg-slate-50/90 rounded-xl p-2 sm:p-2.5 border border-slate-200/80 text-center overflow-hidden">
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold block uppercase tracking-wider truncate">Wind Speed</span>
+                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block truncate">{weather.windSpeed} km/h</span>
                 </div>
 
-                <div className="bg-slate-50/90 rounded-xl p-2.5 border border-slate-200/80 text-center">
-                  <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Sunrise (IST)</span>
-                  <span className="text-xs font-extrabold text-amber-700 mt-0.5 block">{sunriseTime}</span>
+                <div className="bg-slate-50/90 rounded-xl p-2 sm:p-2.5 border border-slate-200/80 text-center overflow-hidden">
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold block uppercase tracking-wider truncate">Sunrise</span>
+                  <span className="text-[11px] sm:text-xs font-extrabold text-amber-700 mt-0.5 block truncate">{sunriseTime}</span>
                 </div>
 
-                <div className="bg-slate-50/90 rounded-xl p-2.5 border border-slate-200/80 text-center">
-                  <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Sunset (IST)</span>
-                  <span className="text-xs font-extrabold text-orange-700 mt-0.5 block">{sunsetTime}</span>
+                <div className="bg-slate-50/90 rounded-xl p-2 sm:p-2.5 border border-slate-200/80 text-center overflow-hidden">
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold block uppercase tracking-wider truncate">Sunset</span>
+                  <span className="text-[11px] sm:text-xs font-extrabold text-orange-700 mt-0.5 block truncate">{sunsetTime}</span>
                 </div>
               </div>
             </div>

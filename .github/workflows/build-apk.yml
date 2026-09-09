@@ -76,7 +76,7 @@ jobs:
         run: |
           echo "Scanning for previous releases to purge..."
           gh release list --limit 100 --json tagName -q '.[].tagName' | while read tag; do
-            if [ "$tag" != "v3.4.0" ]; then
+            if [ "$tag" != "v3.4.1" ]; then
               echo "Removing obsolete release $tag so only single APK remains on GitHub..."
               gh release delete "$tag" --yes --cleanup-tag || true
             fi
@@ -86,27 +86,33 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.4.0
-          name: "MAUSAM Mega Unified App v3.4.0 (Official Single Android APK - Final Release)"
+          tag_name: v3.4.1
+          name: "MAUSAM Mega Unified App v3.4.1 (Official Single Android APK - Final Release)"
           make_latest: true
           body: |
-            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.4.0)
+            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.4.1)
 
             This is the **Final Production Standalone Release** containing the complete, consolidated India Meteorological Department (IMD) intelligence suite bundled into a **single, standalone APK file**.
 
             #### 📦 Single Direct Download:
-            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.4.0/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
+            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.4.1/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
 
-            #### 🚨 Disaster & Calamity Auto-Alert Engine (NEW in v3.4.0):
-            - **Real-Time Threshold Evaluation**: After every weather refresh, the new `disasterAlertEngine` automatically evaluates fetched data against IMD/CPCB thresholds and populates `activeAlerts` — zero manual intervention needed.
-            - **10 Calamity Categories**: Cyclone (IMD grade: Cyclonic Storm / Severe CS / Very Severe CS), Flash Flood (>20 mm/hr), Thunderstorm (WMO codes 95/96/99), Heatwave (≥40°C plains), Cold Wave (≤10°C), Dense Fog (WMO 45/48), Dust Storm (>50 km/h in arid zones), Poor Air Quality (AQI ≥200 CPCB), Coastal/Marine Hazard (wave height ≥2m), Strong Wind (≥40 km/h).
-            - **Severity Grading**: Advisory → Watch → Warning → Emergency, matching IMD colour-code guidelines.
-            - **Coastal & Arid Zone Detection**: Geographic bounding boxes for Indian coastal belt and arid Rajasthan/Gujarat zones.
-            - **Deduplication**: Only one alert per category (highest severity wins), preventing redundant banners.
-            - **Persistent Dismissal**: User-dismissed alerts remain dismissed; auto-alerts regenerate on next refresh from live data.
+            #### 🔐 Clerk Cloud Authentication Fixes (v3.4.1):
+            - **SafeClerkContext Bridge**: Eliminated React hook violations by bridging Clerk provider with safe context; zero unhandled errors when offline or across network boundaries.
+            - **Official Clerk Sign-In & Sign-Up**: Integrated Clerk's official `<SignIn />` and `<SignUp />` embedded components alongside 1-tap modal triggers.
+            - **True Auth Auto-Sync**: Eliminated premature navigation and mock data; now securely synchronizes verified Clerk user profile (name, email, avatar, ID) upon actual authentication completion.
+            - **Resilient Fallback Modes**: Seamless tabbed switching between Clerk Cloud Auth, Standard Email & Password, and 1-Tap Demo / Guest Login.
 
-            #### 🧠 Full AI Engine Audit & Rectifications (from v3.3.0):
-            - M-BPNN v3.0 Canonical Neuron Training, Safe Math/ML Scoring, Robust AI Assistant, Clean Mobile UX.
+            #### 📱 Mobile Phone UI Design Polish & Bug Rectifications:
+            - **Edge-to-Edge Mobile Display**: Removed redundant outer desktop simulator borders and drop shadows on smartphones for a seamless edge-to-edge native appearance.
+            - **IMD Header Responsive Typography**: Resolved header text squishing, collision, and layout shift on narrow screens (360px) via responsive truncation and min-w-0 containers.
+            - **Feature Grid Badge Containment**: Relocated and compacted badges (`ALERT`, `MAP`, `SAT`, `7D`, `3H`, `LIVE`, `AGRI`, `AQI`) inside buttons to prevent horizontal overflow and horizontal scrolling.
+            - **Station Parameter Card**: Added `flex-wrap` and responsive text to temperature high/low and dew point subrow.
+            - **Map Telemetry Safe Area**: Adjusted bottom GIS layer telemetry drawer to respect Android gesture navigation bar.
+            - **Touch Targets & Keyboard Adjustments**: Enabled full vertical scrolling on login/signup forms during mobile virtual keyboard activation.
+
+            #### 🚨 Disaster & Calamity Auto-Alert Engine (from v3.4.0):
+            - Real-time threshold evaluation against IMD/CPCB criteria covering 10 major calamity types: Cyclone, Flash Flood, Thunderstorm, Heatwave, Cold Wave, Dense Fog, Dust Storm, AQI Emergency, Coastal Hazard, and Gale Winds.
 
             #### 🧠 M-BPNN v3.0 Backpropagation Neural Network Engine:
             - **3-Layer Multi-Layer Perceptron ($12 \to 8 \to 8$)**:

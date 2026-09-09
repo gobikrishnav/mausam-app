@@ -722,7 +722,10 @@ export const MapScreen: React.FC = () => {
       </div>
 
       {/* Bottom Floating Active Layer Telemetry Drawer */}
-      <div className="absolute bottom-4 left-3 right-3 z-10 pointer-events-auto">
+      <div 
+        className="absolute left-3 right-3 z-10 pointer-events-auto"
+        style={{ bottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}
+      >
         <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-3.5 shadow-xl space-y-2.5">
           <div className="flex items-center justify-between">
             <div>

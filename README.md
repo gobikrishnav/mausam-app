@@ -1,6 +1,6 @@
 # 🇮🇳 MAUSAM (मौसम): Mega Unified Meteorological Intelligence Platform
 
-[![Android Release](https://img.shields.io/badge/Android%20APK-v3.4.0-0E468A?style=for-the-badge&logo=android&logoColor=white)](https://github.com/gobikrishnav/mausam-app/releases/tag/v3.4.0)
+[![Android Release](https://img.shields.io/badge/Android%20APK-v3.4.1-0E468A?style=for-the-badge&logo=android&logoColor=white)](https://github.com/gobikrishnav/mausam-app/releases/tag/v3.4.1)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/gobikrishnav/mausam-app/build-apk.yml?branch=main&style=for-the-badge)](https://github.com/gobikrishnav/mausam-app/actions)
 [![License](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](LICENSE)
 
@@ -14,7 +14,7 @@
 
 Download the signed, production-ready Android APK directly to your phone:
 
-➡️ **[Download Single APK: MAUSAM.apk (6.65 MB)](https://github.com/gobikrishnav/mausam-app/releases/download/v3.4.0/MAUSAM.apk)** *(Latest Release v3.4.0)*
+➡️ **[Download Single APK: MAUSAM.apk (6.65 MB)](https://github.com/gobikrishnav/mausam-app/releases/download/v3.4.1/MAUSAM.apk)** *(Latest Release v3.4.1)*
 
 *Requires Android 7.0+ (API level 24 to 35). Universal compatibility across all Android devices.*
 
