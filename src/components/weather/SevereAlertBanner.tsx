@@ -76,14 +76,20 @@ export const SevereAlertBanner: React.FC<SevereAlertBannerProps> = ({ alert }) =
 
         <div className="flex items-center gap-1">
           <button
-            onClick={() => setExpanded(!expanded)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded(!expanded);
+            }}
             className={`p-1.5 rounded-lg transition-colors ${style.btnHover}`}
             aria-label="Expand alert"
           >
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
           <button
-            onClick={() => dismissAlert(alert.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              dismissAlert(alert.id);
+            }}
             className={`p-1.5 rounded-lg transition-colors ${style.btnHover}`}
             aria-label="Dismiss alert"
             title="Dismiss this alert"

@@ -21,7 +21,6 @@ export const AlertsScreen: React.FC = () => {
     deleteCustomAlert, 
     notifications,
     markNotificationRead,
-    triggerSimulatedAlert
   } = useAppStore();
 
   return (
@@ -54,12 +53,6 @@ export const AlertsScreen: React.FC = () => {
             <ShieldAlert className="w-4 h-4" />
             Active Severe Warnings ({activeAlerts.length})
           </h3>
-          <button
-            onClick={() => triggerSimulatedAlert('cyclone')}
-            className="text-[10px] text-slate-500 hover:text-slate-800 underline font-medium"
-          >
-            + Add Cyclone Test
-          </button>
         </div>
 
         {activeAlerts.length > 0 ? (

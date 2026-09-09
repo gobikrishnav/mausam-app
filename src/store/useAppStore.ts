@@ -49,6 +49,7 @@ interface AppState {
   
   // Alerts & Notifications
   activeAlerts: SevereAlert[];
+  dismissedAlertIds: string[];
   customAlerts: CustomAlertRule[];
   notifications: NotificationLog[];
   unreadAlertsCount: number;
@@ -122,26 +123,8 @@ export const useAppStore = create<AppState>()(
       weatherError: null,
       lastUpdated: null,
 
-      activeAlerts: [
-        {
-          id: 'alert_heatwave_01',
-          title: 'HEATWAVE ADVISORY',
-          severity: 'Advisory',
-          category: 'heatwave',
-          affectedArea: 'North & Central Plain Regions',
-          headline: 'Daytime temperatures peaking 4–6°C above normal',
-          description: 'High heat index anticipated during peak solar hours (12:00 PM to 4:00 PM). Vulnerable demographics are advised to stay hydrated.',
-          safetyInstructions: [
-            'Avoid direct sunlight exposure between 12:00 PM and 3:30 PM.',
-            'Maintain continuous hydration with electrolyte fluids.',
-            'Schedule outdoor exercise strictly before 8:30 AM or after 6:30 PM.'
-          ],
-          issuedAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 86400000).toISOString(),
-          source: 'Open-Meteo & IMD Threshold Alert Engine',
-          isActive: true,
-        }
-      ],
+      activeAlerts: [],
+      dismissedAlertIds: [],
       customAlerts: [
         {
           id: 'rule_1',
@@ -275,45 +258,15 @@ export const useAppStore = create<AppState>()(
           unreadAlertsCount: updated.filter(n => !n.isRead).length
         };
       }),
-      dismissSevereAlert: (id) => set((state) => ({
-        activeAlerts: state.activeAlerts.filter(a => a.id !== id)
-      })),
-      triggerSimulatedAlert: (category = 'storm') => set((state) => {
-        const newAlert: SevereAlert = {
-          id: `alert_sim_${Date.now()}`,
-          title: category === 'cyclone' ? '⚠️ CYCLONE EMERGENCY' : category === 'storm' ? '⛈️ SEVERE THUNDERSTORM WARNING' : '⚠️ SEVERE WEATHER ALERT',
-          severity: category === 'cyclone' ? 'Emergency' : 'Warning',
-          category,
-          affectedArea: state.currentLocation.name + ' & Surrounding Metro Region',
-          headline: 'Immediate precautionary measures advised by meteorological safety desk',
-          description: 'High velocity winds, heavy rainfall, and potential flash waterlogging expected within the next 2 to 4 hours.',
-          safetyInstructions: [
-            'Stay indoors and keep away from glass windows and loose structures.',
-            'Charge emergency battery packs and disconnect sensitive electronic appliances.',
-            'Do not drive through waterlogged subways or low-lying roads.'
-          ],
-          issuedAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 18000000).toISOString(),
-          source: 'MAUSAM Rapid Emergency Dispatch System',
-          isActive: true,
-        };
-
-        const newNotif: NotificationLog = {
-          id: `notif_${Date.now()}`,
-          title: newAlert.title,
-          message: newAlert.headline,
-          severity: newAlert.severity,
-          timestamp: 'Just now',
-          isRead: false,
-          linkRoute: `/alerts`,
-        };
-
+      dismissSevereAlert: (id) => set((state) => {
+        const nextActive = state.activeAlerts.filter(a => a.id !== id);
+        const nextDismissed = Array.from(new Set([...(state.dismissedAlertIds || []), id]));
         return {
-          activeAlerts: [newAlert, ...state.activeAlerts],
-          notifications: [newNotif, ...state.notifications],
-          unreadAlertsCount: state.unreadAlertsCount + 1,
+          activeAlerts: nextActive,
+          dismissedAlertIds: nextDismissed,
         };
       }),
+      triggerSimulatedAlert: () => {},
       loginAsGuest: () => set({
         user: {
           id: 'citizen_guest',
@@ -339,11 +292,26 @@ export const useAppStore = create<AppState>()(
     {
       name: 'mausam_app_storage',
       onRehydrateStorage: () => (state) => {
-        if (state?.user) {
-          if (!state.user.fullName || state.user.fullName.toLowerCase().includes('rohit')) {
-            state.user.fullName = state.user.email && !state.user.email.toLowerCase().includes('rohit')
-              ? deriveNameFromEmail(state.user.email)
-              : 'Citizen';
+        if (state) {
+          // Auto-purge any legacy simulated test alerts or dismissed alerts from storage
+          if (Array.isArray(state.activeAlerts)) {
+            state.activeAlerts = state.activeAlerts.filter(
+              a => !a.id.startsWith('alert_sim_') && 
+                   !a.title.toLowerCase().includes('cyclone') && 
+                   !(state.dismissedAlertIds || []).includes(a.id)
+            );
+          } else {
+            state.activeAlerts = [];
+          }
+          if (!Array.isArray(state.dismissedAlertIds)) {
+            state.dismissedAlertIds = [];
+          }
+          if (state.user) {
+            if (!state.user.fullName || state.user.fullName.toLowerCase().includes('rohit')) {
+              state.user.fullName = state.user.email && !state.user.email.toLowerCase().includes('rohit')
+                ? deriveNameFromEmail(state.user.email)
+                : 'Citizen';
+            }
           }
         }
       },
@@ -355,6 +323,7 @@ export const useAppStore = create<AppState>()(
         currentLocation: state.currentLocation,
         savedLocations: state.savedLocations,
         customAlerts: state.customAlerts,
+        dismissedAlertIds: state.dismissedAlertIds,
         themeMode: state.themeMode,
         temperatureUnit: state.temperatureUnit,
         windSpeedUnit: state.windSpeedUnit,

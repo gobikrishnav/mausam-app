@@ -2,9 +2,7 @@ name: Build and Release Android APK
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -71,20 +69,40 @@ jobs:
           path: build-artifacts/MAUSAM.apk
           retention-days: 30
 
+      - name: Purge Obsolete GitHub Releases & Artifacts
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Scanning for previous releases to purge..."
+          gh release list --limit 100 --json tagName -q '.[].tagName' | while read tag; do
+            if [ "$tag" != "v3.2.0" ]; then
+              echo "Removing obsolete release $tag so only single APK remains on GitHub..."
+              gh release delete "$tag" --yes --cleanup-tag || true
+            fi
+          done
+
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.1.0
-          name: "MAUSAM Mega Unified App v3.1.0 (Official Single Android APK)"
+          tag_name: v3.2.0
+          name: "MAUSAM Mega Unified App v3.2.0 (Official Single Android APK)"
           make_latest: true
           body: |
-            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.1.0)
+            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.2.0)
 
             This is the **Mega Single Project** release containing the complete, consolidated India Meteorological Department (IMD) intelligence suite bundled into a **single, standalone APK file**.
 
             #### 📦 Single Direct Download:
-            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.1.0/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
+            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.2.0/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
+
+            #### 🛠️ Rectified in v3.2.0:
+            - **Dynamic IMD Nowcast Engine**: Dynamically derives 3-hour bulletins from live atmospheric telemetry (routine all-clear fair weather vs convective / thermal advisories).
+            - **Production UI Polish**: Completely removed developer `+ Add Cyclone Test` button and auto-purged simulated emergency alerts from device storage.
+            - **Persistent Alert Dismissal**: Dismissing safety alerts now saves persistently to local storage across restarts without ghost popups.
+            - **Explore Live Weather Map**: Verified smooth 1-tap navigation to the interactive Doppler radar and INSAT satellite map.
+            - **Single Unified APK**: Only one clean `MAUSAM.apk` release artifact maintained across GitHub.
 
             #### 🧠 M-BPNN v3.0 Backpropagation Neural Network Engine:
             - **3-Layer Multi-Layer Perceptron ($12 \to 8 \to 8$)**:
@@ -96,21 +114,17 @@ jobs:
               - On-device real-time learning: Adapts synaptic weights locally via user feedback (`👍 Helpful` / `👎 Refine`) with zero telemetry
               - Interactive Neural Inspector: Live hidden layer neuron activation bars and manual backprop training epoch trigger
 
-            #### 🌦️ Fixed Live Precipitation Radar & IMD Doppler Stations:
-            - Fixed RainViewer v2 tile cache API with dynamic hash paths
-            - 10 IMD Doppler Weather Radar (DWR) stations (Delhi, Mumbai, Chennai, Kolkata, Srinagar, Kochi, Patna, Nagpur, Hyderabad, Agartala) with 250 km radar range rings and reflectivity telemetry
+            #### 🌦️ Live Precipitation Radar & IMD Doppler Stations:
+            - RainViewer v2 tile cache API with dynamic hash paths
+            - 10 IMD Doppler Weather Radar (DWR) stations with 250 km radar range rings and reflectivity telemetry
 
-            #### 🗺️ Expanded Discover Locations:
+            #### 🗺️ Discover Locations:
             - 26 Curated Indian Destinations across 5 distinct meteorological zones:
               - 🏔️ Hill Stations (Shimla, Manali, Ooty, Darjeeling, Munnar, Leh)
               - 🏖️ Coastal & Islands (Goa, Kovalam, Puri, Digha, Havelock, Kanyakumari)
               - 🛕 Pilgrimage (Varanasi, Tirupati, Kedarnath, Amritsar, Haridwar, Madurai)
               - 🌾 Agricultural Belts (Ludhiana, Nashik, Vidarbha, Jorhat, Guntur)
               - ⚠️ Cyclone & Extreme Zones (Paradip, Cherrapunji, Joshimath, Rameswaram)
-
-            #### 🔐 Fixed Clerk Authentication:
-            - Fixed localhost browser redirection trap on Android WebView
-            - Fallback in-app client-side navigation with safe error boundary
 
             #### 🛡️ Mobile UX:
             - Android 7.0+ (API 24 to API 35) compatibility

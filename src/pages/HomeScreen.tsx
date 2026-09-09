@@ -167,15 +167,112 @@ export const HomeScreen: React.FC = () => {
     setMlRefreshCount(c => c + 1);
   };
 
-  // Countdown timer simulation for Nowcast 3-hour window
+  // Countdown timer calculation for IMD 3-hour Nowcast window
   useEffect(() => {
-    const timer = setInterval(() => {
+    const updateCountdown = () => {
       const now = new Date();
-      const minsLeft = 60 - (now.getMinutes() % 60);
-      setNowcastCountdown(`02h ${String(minsLeft).padStart(2, '0')}m`);
-    }, 60000);
+      const currentHour = now.getHours();
+      // IMD 3-hour blocks: 0-3, 3-6, 6-9, 9-12, 12-15, 15-18, 18-21, 21-24
+      const nextBlockHour = (Math.floor(currentHour / 3) + 1) * 3;
+      const targetTime = new Date(now);
+      targetTime.setHours(nextBlockHour, 0, 0, 0);
+      const diffMs = targetTime.getTime() - now.getTime();
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      setNowcastCountdown(`${String(diffHours).padStart(2, '0')}h ${String(diffMins).padStart(2, '0')}m`);
+    };
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 60000);
     return () => clearInterval(timer);
   }, []);
+
+  // Dynamic IMD Nowcast Bulletin derived from live station telemetry
+  const nowcastData = useMemo(() => {
+    const isThunder = Boolean(
+      weather?.conditionText?.toLowerCase().includes('thunder') || 
+      (weather?.weatherCode && [95, 96, 99].includes(weather.weatherCode))
+    );
+    const isRain = Boolean(
+      (weather?.precipitation && weather.precipitation > 0.5) || 
+      weather?.conditionText?.toLowerCase().includes('rain') ||
+      (weather?.weatherCode && [51, 53, 55, 61, 63, 65, 80, 81, 82].includes(weather.weatherCode))
+    );
+    const isHeatwave = Boolean(weather?.temperature && weather.temperature >= 38);
+    const isHighWind = Boolean(weather?.windSpeed && weather.windSpeed > 35);
+
+    // Calculate max rain probability over next 3-hour window from hourly forecast
+    const maxUpcomingRainProb = hourly.slice(0, 3).reduce((max, h) => Math.max(max, h.precipitationProbability || 0), 0);
+    const isHighRainProb = maxUpcomingRainProb >= 50;
+
+    if (isThunder) {
+      return {
+        badge: 'Thunderstorm Warning',
+        badgeBg: 'bg-amber-600 text-white',
+        border: 'border-amber-400',
+        iconBg: 'bg-amber-100 text-amber-600',
+        boxBg: 'bg-amber-50/90 border border-amber-200 text-amber-950',
+        message: `Moderate thunderstorm accompanied by lightning and surface wind gusts (${weather?.windSpeed || 40} km/h) is likely over ${currentLocation.name} within the next 3 hours. Seek safe shelter immediately during lightning.`,
+        title: 'IMD Nowcast Alert (3-Hour Window)',
+        titleColor: 'text-[#E65100]',
+        icon: <Zap className="w-4 h-4 animate-bounce" />,
+      };
+    }
+
+    if (isRain || isHighRainProb) {
+      return {
+        badge: 'Rainfall Advisory',
+        badgeBg: 'bg-blue-600 text-white',
+        border: 'border-blue-300',
+        iconBg: 'bg-blue-100 text-blue-700',
+        boxBg: 'bg-blue-50/90 border border-blue-200 text-blue-950',
+        message: `Light to moderate convective rain showers (${maxUpcomingRainProb || 60}% probability) expected across ${currentLocation.name} sectors over the next 3 hours.`,
+        title: 'IMD Nowcast Advisory (3-Hour Window)',
+        titleColor: 'text-blue-700',
+        icon: <Zap className="w-4 h-4 text-blue-600" />,
+      };
+    }
+
+    if (isHeatwave) {
+      return {
+        badge: 'Heat Advisory',
+        badgeBg: 'bg-orange-600 text-white',
+        border: 'border-orange-300',
+        iconBg: 'bg-orange-100 text-orange-600',
+        boxBg: 'bg-orange-50/90 border border-orange-200 text-orange-950',
+        message: `Elevated thermal index observed over ${currentLocation.name}. Daytime surface temperatures peaking near ${weather?.temperature}°C; maintain hydration and avoid direct solar exposure.`,
+        title: 'IMD Thermal Advisory (3-Hour Window)',
+        titleColor: 'text-orange-700',
+        icon: <Zap className="w-4 h-4 text-orange-600" />,
+      };
+    }
+
+    if (isHighWind) {
+      return {
+        badge: 'Wind Advisory',
+        badgeBg: 'bg-teal-600 text-white',
+        border: 'border-teal-300',
+        iconBg: 'bg-teal-100 text-teal-700',
+        boxBg: 'bg-teal-50/90 border border-teal-200 text-teal-950',
+        message: `Gusty surface wind conditions (${weather?.windSpeed} km/h) active over ${currentLocation.name}. Wind speeds expected to ease in the next 3-hour period.`,
+        title: 'IMD Surface Wind Bulletin (3-Hour Window)',
+        titleColor: 'text-teal-700',
+        icon: <Zap className="w-4 h-4 text-teal-600" />,
+      };
+    }
+
+    // Default: Standard Routine Fair Weather Nowcast Bulletin
+    return {
+      badge: 'All Clear / Fair',
+      badgeBg: 'bg-emerald-600 text-white',
+      border: 'border-emerald-300',
+      iconBg: 'bg-emerald-100 text-emerald-700',
+      boxBg: 'bg-emerald-50/70 border border-emerald-200 text-emerald-950',
+      message: `Fair and stable meteorological conditions prevailing over ${currentLocation.name} and surrounding sectors for the next 3 hours. No adverse convective storm or precipitation warning.`,
+      title: 'IMD Routine Nowcast (3-Hour Window)',
+      titleColor: 'text-emerald-800',
+      icon: <CheckCircle2 className="w-4 h-4 text-emerald-600" />,
+    };
+  }, [weather, currentLocation]);
 
   const displayTemp = (celsius: number) => {
     if (temperatureUnit === 'fahrenheit') {
@@ -316,35 +413,38 @@ export const HomeScreen: React.FC = () => {
         />
 
         {/* 3-Hour Rapid Nowcast Station Bulletin Card with Real Countdown */}
-        <div id="nowcast-section" className="bg-white/95 backdrop-blur-md rounded-2xl border border-amber-300 shadow-sm p-3.5 space-y-2.5">
+        <div id="nowcast-section" className={`bg-white/95 backdrop-blur-md rounded-2xl border ${nowcastData.border} shadow-sm p-3.5 space-y-2.5 transition-all duration-300`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-amber-100 text-[#E65100]">
-                <Zap className="w-4 h-4 animate-bounce" />
+              <div className={`p-2 rounded-xl ${nowcastData.iconBg}`}>
+                {nowcastData.icon}
               </div>
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#E65100]">
-                  IMD Nowcast Alert (3-Hour Window)
+                <span className={`text-[10px] font-extrabold uppercase tracking-wider ${nowcastData.titleColor}`}>
+                  {nowcastData.title}
                 </span>
                 <h4 className="font-bold text-xs text-slate-900 leading-tight">
                   {currentLocation.name} & Surrounding District Sectors
                 </h4>
               </div>
             </div>
-            <span className="text-[10px] font-mono font-bold bg-[#E65100] text-white px-2.5 py-0.5 rounded-full shadow-sm">
+            <span className={`text-[10px] font-mono font-bold ${nowcastData.badgeBg} px-2.5 py-0.5 rounded-full shadow-sm`}>
               Expires: {nowcastCountdown}
             </span>
           </div>
 
-          <p className="text-xs text-slate-700 font-medium leading-relaxed bg-amber-50/70 p-3 rounded-xl border border-amber-200">
-            Moderate thunderstorm accompanied by lightning and surface wind gusts (35–45 km/h) is very likely to occur over {currentLocation.name} within the next 3 hours. Seek safe shelter immediately during lightning.
+          <p className={`text-xs font-medium leading-relaxed p-3 rounded-xl ${nowcastData.boxBg}`}>
+            {nowcastData.message}
           </p>
 
           <div className="flex items-center justify-between pt-1 text-[11px] text-slate-600">
             <span>Issued by: Regional Meteorological Centre (RMC)</span>
             <button 
-              onClick={() => navigate('/map')}
-              className="text-[#0E468A] font-bold hover:underline flex items-center gap-1"
+              onClick={() => {
+                navigate('/map');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="text-[#0E468A] font-bold hover:underline flex items-center gap-1 active:scale-95 transition-transform"
             >
               <span>Explore Live Weather Map</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
