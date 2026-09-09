@@ -24,7 +24,6 @@ import { MobileContainer } from '../components/layout/MobileContainer';
 import { ImdHeader } from '../components/layout/ImdHeader';
 import { LiveWeatherScene } from '../components/weather/LiveWeatherScene';
 import { ImdFeatureGrid } from '../components/weather/ImdFeatureGrid';
-import { ImdWarningMatrix } from '../components/weather/ImdWarningMatrix';
 import { PersonaWeatherCard } from '../components/weather/PersonaWeatherCard';
 import { SevereAlertBanner } from '../components/weather/SevereAlertBanner';
 import { TutorialOverlay } from '../components/weather/TutorialOverlay';
@@ -306,14 +305,6 @@ export const HomeScreen: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Official 4-Color IMD Warning Matrix (100% English) */}
-        <ImdWarningMatrix 
-          currentTier="orange"
-          districtName={currentLocation.name}
-          phenomenon="Thunderstorm with squall & gusty winds (40–50 km/h) accompanied by lightning"
-          validTill="Valid: Next 3 Hours (14:30 IST)"
-        />
 
         {/* 8-Icon IMD Meteorological Action Hub */}
         <ImdFeatureGrid 
