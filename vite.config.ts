@@ -29,13 +29,41 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/api\.open-meteo\.com\/.*/i,
+            urlPattern: /^https:\/\/api\.data\.gov\.in\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'open-meteo-cache',
+              cacheName: 'datagov-api-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 30 // 30 minutes
+                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/mausam\.imd\.gov\.in\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'imd-mausam-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 12 // 12 hours
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/incois\.gov\.in\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'incois-cache',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 12 // 12 hours
               },
               cacheableResponse: {
                 statuses: [0, 200]

@@ -614,7 +614,7 @@ export const MapScreen: React.FC = () => {
       case 'temperature':
         return {
           title: 'Surface Temperature (°C) Heat Grid',
-          sub: 'Open-Meteo & IMD Station Network',
+          sub: 'IMD Synoptic & AWS Observation Network',
           legendColors: [
             { label: 'Cool (<20°C)', color: '#0284C7' },
             { label: 'Comfortable (20-32°C)', color: '#D97706' },

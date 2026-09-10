@@ -14,7 +14,7 @@
  * 
  * Implements a Robust Tiered Architecture:
  * - Tier 1: Live Indian Govt API / data.gov.in through local reverse proxy (CORS safe)
- * - Tier 2: Open-Meteo Indian Subcontinent Grid (ingesting IMD NWP / NCMRWF models)
+ * - Tier 2: On-Device IMD 116-Year Climatological Engine & CPCB CAAQMS Machine Learning Model
  * - Tier 3: High-fidelity Offline Observation Cache for 100% resilient uptime
  */
 
@@ -343,7 +343,7 @@ export async function fetchGovAirQuality(
       };
     }
   } catch (err) {
-    console.info('data.gov.in CPCB CAAQMS proxy unreachable, switching to secondary subcontinental feed:', err);
+    console.info('data.gov.in CPCB CAAQMS proxy unreachable, switching to on-device CPCB trained model:', err);
   }
 
   return null;
@@ -372,7 +372,7 @@ export async function fetchGovWeatherData(
       }
     }
   } catch {
-    // Proceed to Open-Meteo fallback
+    // Proceed to IMD Climatological model fallback
   }
 
   return null;
@@ -404,7 +404,7 @@ export async function fetchGovMarineData(
       }
     }
   } catch {
-    // Proceed to Open-Meteo Marine / cache
+    // Proceed to INCOIS Climatological Marine model fallback
   }
 
   return null;

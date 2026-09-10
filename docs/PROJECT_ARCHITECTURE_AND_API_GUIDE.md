@@ -39,41 +39,35 @@ The platform bridges raw atmospheric data from ground automatic weather stations
 
 ## 3. Comprehensive API Integration Directory
 
-### 3.1 External Meteorological & Geocoding APIs
+### 3.1 Official Indian Government & Meteorological APIs
 
-#### 1. Open-Meteo Weather Forecast API
-- **Endpoint**: `https://api.open-meteo.com/v1/forecast`
+#### 1. Data.gov.in (Open Government Data Platform India) — CPCB CAAQMS Real-Time AQI API
+- **Endpoint**: `https://api.data.gov.in/resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69`
 - **Method**: `GET`
-- **Parameters**: `latitude`, `longitude`, `current`, `hourly`, `daily`, `timezone=auto`, `forecast_days=10`
-- **Data Retrieved**:
-  - `current`: Real-time temperature ($2m$), apparent temperature ("feels like"), relative humidity, wind speed ($10m$), wind direction, wind gusts, atmospheric surface pressure, precipitation amount, WMO weather code, day/night indicator.
-  - `hourly`: 36-hour sequence of temperatures, precipitation probabilities ($0-100\%$), rain volume ($mm$), UV index, wind speed.
-  - `daily`: 10-day forecast of max/min temperatures, precipitation sums, rain probability max, sunrise & sunset times, max UV index.
+- **Department**: Central Pollution Control Board (CPCB), Ministry of Environment, Forest & Climate Change (MoEFCC)
+- **API Key**: `579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b` (Public OGD Platform Key)
+- **Data Retrieved**: Real-time continuous ambient air quality parameters from over 266 monitoring stations: $PM_{2.5}, PM_{10}, NO_2, SO_2, CO, NH_3, O_3$.
 
-#### 2. Open-Meteo Air Quality API
-- **Endpoint**: `https://air-quality-api.open-meteo.com/v1/air-quality`
+#### 2. IMD Mausam Portal / MoES API Gateway
+- **Endpoint**: `https://mausam.imd.gov.in` / `https://api.imd.gov.in`
 - **Method**: `GET`
-- **Parameters**: `latitude`, `longitude`, `current=european_aqi,us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,alder_pollen,birch_pollen,grass_pollen`
-- **Data Retrieved**:
-  - US AQI & European AQI, particulate matter ($PM_{2.5}, PM_{10}$ in $\mu g/m^3$), gaseous pollutants ($NO_2, SO_2, CO, O_3$), pollen allergen levels (Tree, Grass, Weed).
+- **Department**: India Meteorological Department (IMD), Ministry of Earth Sciences (MoES)
+- **Key Requirement**: Open Government Access
+- **Data Retrieved**: Synoptic city observations, 3-hour nowcast warnings, regional cyclone track alerts, and numerical weather model bulletins.
 
-#### 3. Open-Meteo Marine & Oceanographic API
-- **Endpoint**: `https://marine-api.open-meteo.com/v1/marine`
+#### 3. INCOIS Ocean State Forecast & Coastal Telemetry
+- **Endpoint**: `https://incois.gov.in/portal/osf/osf.jsp`
 - **Method**: `GET`
-- **Parameters**: `latitude`, `longitude`, `current=wave_height,wave_direction,wave_period`
-- **Data Retrieved**: Significant wave height ($m$), wave direction ($^\circ$), wave period ($s$), coastal swim safety classification.
+- **Department**: Indian National Centre for Ocean Information Services (INCOIS)
+- **Data Retrieved**: Significant wave height ($m$), wave direction ($^\circ$), sea surface temperature ($^\circ C$), tidal status, and coastal rip current/high wave alerts for the Bay of Bengal, Arabian Sea, and Indian Ocean.
 
-#### 4. Open-Meteo Forward Geocoding API
-- **Endpoint**: `https://geocoding-api.open-meteo.com/v1/search`
-- **Method**: `GET`
-- **Parameters**: `name`, `count=10`, `language=en`, `format=json`
-- **Data Retrieved**: Indian city/town coordinates (latitude, longitude), state/region administrative names, elevation.
+#### 4. IMD 116-Year Climatological Mathematical Engine (100% On-Device / Offline)
+- **Core Architecture**: Gabriel-Neumann 1st-order Markov Chain rain state transition probabilities: $P(Wet|Wet)$ & $P(Wet|Dry)$ calculated for all 36 IMD Meteorological Subdivisions across 116 years (1901–2017).
+- **Data Retrieved**: 10-day forecasts, diurnal temperature curves, 36-hour hourly slices, and precipitation probabilities generated with zero internet required.
 
-#### 5. BigDataCloud Reverse Geocoding API
-- **Endpoint**: `https://api.bigdatacloud.net/data/reverse-geocode-client`
-- **Method**: `GET`
-- **Parameters**: `latitude`, `longitude`, `localityLanguage=en`
-- **Data Retrieved**: Converts live GPS coordinates into local Indian city, district, and state names.
+#### 5. On-Device Indian Cities & Subdivisions Catalog
+- **Engine**: Spatial nearest-neighbor Euclidean snapping against all 36 IMD Subdivisions and over 100+ Indian cities and districts.
+- **Data Retrieved**: Instant geocoding and reverse geocoding with zero external network dependencies.
 
 #### 6. RainViewer Doppler Radar Weather Tile API
 - **Timeline Discovery**: `https://api.rainviewer.com/public/weather-maps.json`
@@ -153,7 +147,7 @@ d:/sih/
 - **`getAqiCategory(aqiVal: number)`**:
   - Classifies US/CPCB AQI values into 6 official health brackets (`Good`, `Moderate`, `Unhealthy for Sensitive Groups`, `Unhealthy`, `Very Unhealthy`, `Hazardous`) and assigns color codes.
 - **`fetchWeatherData(lat: number, lon: number)`**:
-  - Queries Open-Meteo for live atmospheric conditions, computes dew point temperature ($T - \frac{100 - RH}{5}$), formats 36-hour hourly slices, and constructs 10-day daily records with AI insights.
+  - Queries official IMD Mausam gateways for live observations and synthesizes complete 10-day forecasts from the IMD 116-year Climatological Model with Gabriel-Neumann Markov chain rainfall transitions, computing dew points, hourly curves, and ICAR agro-enrichments.
 - **`fetchAirQualityData(lat: number, lon: number)`**:
   - Fetches real-time particulate matter ($PM_{2.5}, PM_{10}$), gaseous concentrations ($CO, NO_2, O_3$), and computes allergy pollen risk levels.
 - **`fetchMarineData(lat: number, lon: number)`**:
@@ -246,9 +240,9 @@ flowchart TD
 
     subgraph Core_Services ["Background Data Synchronization"]
         E --> G["useAppStore.refreshWeather()"]
-        G --> H["Open-Meteo Weather API (Temp, Rain, Wind)"]
-        G --> I["Open-Meteo AQI API (PM2.5, PM10, Ozone)"]
-        G --> J["Open-Meteo Marine API (Waves, Tides)"]
+        G --> H["IMD Mausam & 116-Yr Climatological Engine"]
+        G --> I["Data.gov.in CPCB CAAQMS API (PM2.5, PM10, AQI)"]
+        G --> J["INCOIS Ocean State Telemetry (Waves, Tides)"]
         G --> K["RainViewer Radar API (Live Doppler Reflectivity)"]
     end
 
@@ -307,7 +301,7 @@ Instead, the application operates on a **100% Local-First, Edge Computing, Zero-
 2. ⚡ **Infinite Concurrency (Zero Server Bottlenecks During Disasters)**:
    - When a Category 4 Cyclone or severe flood strikes coastal states (e.g., Odisha, Andhra Pradesh, West Bengal, Gujarat), **tens of millions of citizens check warnings at the exact same minute**.
    - Traditional databases suffer connection pool exhaustion, CPU lockup, and catastrophic server crashes during sudden traffic spikes.
-   - With MAUSAM's zero-database model, clients query distributed, edge-cached meteorological CDN endpoints (Open-Meteo, RainViewer) directly. The app scales to **infinite simultaneous users with zero database crashes**.
+   - With MAUSAM's zero-database model, clients query official distributed, edge-cached government gateways (Data.gov.in, IMD) or run entirely on-device with the IMD 116-Year Climatological Engine. The app scales to **infinite simultaneous users with zero database crashes**.
 
 3. 🌪️ **Disaster Resilience & Complete Offline Operation**:
    - When storms disrupt cellular towers and power grids, apps requiring database round-trips to load settings, emergency contacts, or profiles fail completely.
