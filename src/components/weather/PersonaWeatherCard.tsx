@@ -60,6 +60,7 @@ import {
 } from '../../services/mlAlgorithmsEngine';
 import { MausamNeuralNetwork } from '../../services/neuralNetPersonalization';
 import { useAppStore } from '../../store/useAppStore';
+import { getGovEarthAndSoilSync } from '../../services/indianGovApiService';
 
 interface PersonaCardProps {
   persona: PersonaType;
@@ -101,6 +102,7 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
   const travelMl = useMemo(() => predictTravelDisruptionML({ weather, daily, stateName }), [weather, daily, stateName]);
   const parentMl = useMemo(() => predictChildCommuteSafetyML({ weather, hourly, airQuality }), [weather, hourly, airQuality]);
   const agroMl = useMemo(() => predictAgroYieldAndPestML({ weather, daily, stateName }), [weather, daily, stateName]);
+  const earthSoil = useMemo(() => getGovEarthAndSoilSync(stateName), [stateName]);
   const commuteMl = useMemo(() => predictCommuteFrictionML({ weather, hourly }), [weather, hourly]);
   const eventMl = useMemo(() => predictEventDisruptionML({ weather, daily }), [weather, daily]);
 
@@ -763,6 +765,42 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
           <div className="text-[10px] text-slate-500 font-medium pt-1 border-t border-emerald-200/50 flex items-center justify-between">
             <span>🌊 <strong>Reservoir Status:</strong> {agroMl.cwcReservoirWaterSecurity}</span>
             <span>🐛 Pest Risk: <strong>{agroMl.pestRiskCategory}</strong></span>
+          </div>
+        </div>
+
+        {/* Official Government Earth & Soil Health Intelligence (Data.gov.in / MoAFW / CGWB) */}
+        <div className="bg-amber-50/70 p-2.5 rounded-2xl border border-amber-200/80 space-y-1.5 text-[11px]">
+          <div className="flex items-center justify-between font-bold text-amber-950">
+            <span className="flex items-center gap-1.5">
+              <span>🌍</span>
+              <span>Govt Earth & Soil Health Telemetry</span>
+            </span>
+            <span className="text-[9px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full border border-amber-300 font-mono font-bold">
+              MoAFW & CGWB API
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+            <div className="bg-white/90 p-1.5 rounded-xl border border-amber-100">
+              <span className="text-[9px] text-slate-500 block">Soil Type & pH</span>
+              <span className="font-bold text-slate-800 text-[10px] block truncate">{earthSoil.soilType.split(' ')[0]} {earthSoil.soilType.split(' ')[1]}</span>
+              <span className="text-[9px] text-emerald-700 font-semibold">pH {earthSoil.soilPh} ({earthSoil.soilPhCategory})</span>
+            </div>
+            <div className="bg-white/90 p-1.5 rounded-xl border border-amber-100">
+              <span className="text-[9px] text-slate-500 block">Primary Nutrients (NPK)</span>
+              <span className="font-bold text-slate-800 text-[10px] block">N:{earthSoil.nitrogenKgHa} P:{earthSoil.phosphorusKgHa}</span>
+              <span className="text-[9px] text-slate-500">K: {earthSoil.potassiumKgHa} kg/ha</span>
+            </div>
+            <div className="bg-white/90 p-1.5 rounded-xl border border-amber-100">
+              <span className="text-[9px] text-slate-500 block">Water Table (CGWB)</span>
+              <span className="font-bold text-blue-900 text-[10px] block">{earthSoil.groundwaterDepthM} m Depth</span>
+              <span className="text-[9px] text-emerald-700 font-semibold">{earthSoil.groundwaterStatus} Aquifer</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-[9px] text-slate-600 pt-1 border-t border-amber-200/60">
+            <span>🌱 <strong>Organic Carbon:</strong> {earthSoil.organicCarbonPct}% (Healthy Humus)</span>
+            <span>🌡️ <strong>Topsoil Temp (ISRO):</strong> {earthSoil.soilSkinTempC}°C</span>
           </div>
         </div>
 

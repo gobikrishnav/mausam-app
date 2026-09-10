@@ -152,6 +152,23 @@ export interface MarineData {
   swimSafety: 'Safe' | 'Caution' | 'Dangerous';
 }
 
+export interface EarthAndSoilData {
+  soilMoisturePct: number;
+  soilMoistureCategory: 'Dry (<20%)' | 'Optimal (20-45%)' | 'Saturated (>45%)' | 'Waterlogged';
+  soilType: string;
+  soilPh: number;
+  soilPhCategory: 'Slightly Acidic' | 'Neutral' | 'Slightly Alkaline';
+  organicCarbonPct: number;
+  nitrogenKgHa: number;
+  phosphorusKgHa: number;
+  potassiumKgHa: number;
+  groundwaterDepthM: number;
+  groundwaterStatus: 'Safe' | 'Semi-Critical' | 'Critical';
+  soilSkinTempC: number;
+  source: string;
+  apiKeyUsed: string;
+}
+
 export type AlertSeverity = 'Advisory' | 'Watch' | 'Warning' | 'Emergency';
 
 export interface SevereAlert {
