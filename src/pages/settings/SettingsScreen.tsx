@@ -50,10 +50,6 @@ export const SettingsScreen: React.FC = () => {
   const [eveningSummary, setEveningSummary] = useState<boolean>(true);
   const [severeOnly, setSevereOnly] = useState<boolean>(false);
   const [liveGpsEnabled, setLiveGpsEnabled] = useState<boolean>(true);
-  const [tomtomKey, setTomtomKey] = useState<string>(() => localStorage.getItem('mausam_tomtom_key') || import.meta.env.VITE_TOMTOM_API_KEY || '0VGms4e2HWfXZ767rZ1weQR64LyEqgI6');
-  const [isSavedKey, setIsSavedKey] = useState<boolean>(false);
-  const [clerkKey, setClerkKey] = useState<string>(() => localStorage.getItem('mausam_clerk_key') || import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_bW9yZS1tYXJtb3NldC0zNC5jbGVyay5hY2NvdW50cy5kZXYk');
-  const [isSavedClerkKey, setIsSavedClerkKey] = useState<boolean>(false);
   const [mlResetSuccess, setMlResetSuccess] = useState<boolean>(false);
   
   // Indian Government Data & API Integration State
@@ -69,18 +65,6 @@ export const SettingsScreen: React.FC = () => {
     } catch {}
     logout();
     navigate('/auth/login', { replace: true });
-  };
-
-  const handleSaveTomtomKey = () => {
-    localStorage.setItem('mausam_tomtom_key', tomtomKey.trim());
-    setIsSavedKey(true);
-    setTimeout(() => setIsSavedKey(false), 2000);
-  };
-
-  const handleSaveClerkKey = () => {
-    localStorage.setItem('mausam_clerk_key', clerkKey.trim());
-    setIsSavedClerkKey(true);
-    setTimeout(() => setIsSavedClerkKey(false), 2000);
   };
 
   const handleSaveDataGovKey = () => {
@@ -220,33 +204,7 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Map & Traffic API Configuration */}
-      <div className="bg-white rounded-2xl p-4 space-y-3 border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-2 text-xs font-bold text-[#0E468A] uppercase tracking-wider">
-          <Key className="w-4 h-4" />
-          <span>Interactive Map & Traffic API</span>
-        </div>
 
-        <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
-          Weather layers (Rainfall, Satellite, Temp, Wind, AQI) are 100% free and open. Live commercial road traffic flow tiles are powered by TomTom:
-        </p>
-
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="TomTom API key (leave blank for vector engine)..."
-            value={tomtomKey}
-            onChange={(e) => setTomtomKey(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#0E468A]"
-          />
-          <button
-            onClick={handleSaveTomtomKey}
-            className="px-3 py-2 rounded-xl bg-[#0E468A] text-white text-xs font-bold shadow-xs hover:bg-[#082046]"
-          >
-            {isSavedKey ? 'Saved!' : 'Save'}
-          </button>
-        </div>
-      </div>
 
       {/* Official Indian Government Data & APIs Card */}
       <div className="bg-white rounded-2xl p-4 space-y-3.5 border border-slate-200 shadow-sm">
@@ -350,59 +308,31 @@ export const SettingsScreen: React.FC = () => {
         )}
       </div>
 
-      {/* Clerk Authentication Settings Card */}
+      {/* National Digital Citizen Profile Card (100% Local & Private) */}
       <div className="bg-white rounded-2xl p-4 space-y-3 border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-bold text-[#082046] uppercase tracking-wider">
             <Shield className="w-4 h-4 text-emerald-600" />
-            <span>Clerk Cloud Authentication</span>
+            <span>National Citizen Profile</span>
           </div>
           <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{isClerkAvailable ? 'Connected' : 'Ready'}</span>
+            <span>100% On-Device & Private</span>
           </span>
         </div>
 
         <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
-          Clerk provides secure single sign-on, email verification, and profile management across your devices.
+          Zero commercial third-party trackers. Your preferences, saved locations, and lifestyle persona weights are stored purely on your local device with zero cloud tracking.
         </p>
 
-        {clerkUser ? (
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-            <div>
-              <span className="text-xs font-bold text-slate-900 block">{clerkUser.fullName || clerkUser.firstName || 'Clerk Citizen'}</span>
-              <span className="text-[10px] text-slate-500 font-mono">{clerkUser.primaryEmailAddress?.emailAddress || 'citizen@clerk.mausam.in'}</span>
-            </div>
-            <span className="text-[10px] font-bold bg-[#0E468A] text-white px-2 py-0.5 rounded-md">
-              Synced
-            </span>
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold text-slate-900 block">{displayName}</span>
+            <span className="text-[10px] text-slate-500 font-mono">citizen@mausam.imd.gov.in</span>
           </div>
-        ) : (
-          <div className="p-2.5 bg-blue-50/60 border border-blue-200/80 rounded-xl text-[11px] text-blue-900 flex items-center justify-between">
-            <span>Session: <strong>{displayName}</strong></span>
-            <span className="text-[9px] font-mono text-blue-700 uppercase font-bold">Local Auth</span>
-          </div>
-        )}
-
-        <div className="pt-1">
-          <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
-            Clerk Publishable Key (VITE_CLERK_PUBLISHABLE_KEY)
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="pk_test_..."
-              value={clerkKey}
-              onChange={(e) => setClerkKey(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[10px] font-mono text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#0E468A]"
-            />
-            <button
-              onClick={handleSaveClerkKey}
-              className="px-3 py-2 rounded-xl bg-[#082046] text-white text-xs font-bold shadow-xs hover:bg-[#0E468A] shrink-0"
-            >
-              {isSavedClerkKey ? 'Saved!' : 'Save Key'}
-            </button>
-          </div>
+          <span className="text-[10px] font-bold bg-[#0E468A] text-white px-2 py-0.5 rounded-md">
+            Local Identity
+          </span>
         </div>
       </div>
 

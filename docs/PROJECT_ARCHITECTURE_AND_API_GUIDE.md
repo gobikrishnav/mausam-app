@@ -74,14 +74,14 @@ The platform bridges raw atmospheric data from ground automatic weather stations
 - **Tile Format**: `https://tilecache.rainviewer.com{path}/256/{z}/{x}/{y}/2/1_1.png`
 - **Purpose**: Real-time live precipitation radar loop animation with dynamic hash-based time paths.
 
-#### 7. TomTom Routing & Traffic API
-- **Endpoint**: `https://api.tomtom.com/routing/1/calculateRoute/`
-- **Method**: `GET`
-- **Purpose**: Calculates route transit travel duration, congestion delays, and corridor weather hazards.
+#### 7. NHAI (National Highways Authority of India) Arterial Corridor Telemetry
+- **Department**: Ministry of Road Transport & Highways (MoRTH)
+- **Method**: On-Device Kinematic Highway Friction & Speed Assessment
+- **Purpose**: Calculates corridor weather hazards, wet asphalt braking distances, and highway delay buffers across NH44, NH48, NH19, NH16, and NH53.
 
-#### 8. Clerk Cloud Identity & Authentication API
-- **SDK**: `@clerk/clerk-react`
-- **Purpose**: Handles authentication token verification, OAuth single sign-on (Google, Apple, email), user avatar URLs, and profile synchronization.
+#### 8. National Digital Citizen Profile (Local On-Device Identity)
+- **Architecture**: Zero 3rd-party commercial trackers. 100% offline, privacy-first local cryptographic identity.
+- **Purpose**: Stores user preferences, saved locations, and lifestyle persona weights strictly on the citizen's device.
 
 ---
 

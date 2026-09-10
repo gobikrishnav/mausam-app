@@ -1,8 +1,8 @@
 import React, { Component, ReactNode, createContext } from 'react';
 import { ClerkProvider, useClerk, useUser } from '@clerk/react';
 
-// Default Clerk Publishable Key for immediate out-of-the-box operation
-export const DEFAULT_CLERK_KEY = 'pk_test_bW9yZS1tYXJtb3NldC0zNC5jbGVyay5hY2NvdW50cy5kZXYk';
+// Zero 3rd-party keys by default: Native Indian Citizen Auth is the primary mode
+export const DEFAULT_CLERK_KEY = '';
 
 export interface SafeClerkState {
   isAvailable: boolean;
