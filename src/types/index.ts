@@ -78,6 +78,7 @@ export interface CurrentWeather {
   pressure: number;
   dewPoint: number;
   precipitation: number;
+  visibilityKm?: number;
   timestamp: string;
 }
 
@@ -106,6 +107,25 @@ export interface DailyForecast {
   sunrise: string;
   sunset: string;
   aiInsight?: string;
+  // Deep Indian Government Dataset Intelligence
+  humidity?: number;
+  windSpeed?: number;
+  windDirection?: number;
+  imdSubdivisionName?: string; // Exact IMD meteorological subdivision name
+  imdDecadalTrendMm?: number; // 116-year rainfall trend per decade (mm/decade)
+  imdRainfallNormalMm?: number; // IMD 116-year monthly normal for this day
+  imdClimateDepartureMm?: number; // Departure/anomaly from IMD normal (+wet / -dry)
+  departureCategory?: 'Large Excess' | 'Excess' | 'Normal' | 'Deficient' | 'Large Deficient';
+  et0EvapotranspirationMm?: number; // FAO-56 Penman-Monteith crop water demand (mm/day)
+  wbgtMaxC?: number; // Liljegren Wet-Bulb Globe Temperature for heat strain
+  heatStrainTier?: 'Safe' | 'Caution' | 'Extreme Caution' | 'High Strain' | 'Danger';
+  roadFrictionMu?: number; // Commuter road friction coefficient (0.82 / 0.51 / 0.31)
+  commuterDelayEstMin?: number; // Estimated commute delay in minutes
+  cpcbEstAqi?: number; // Estimated Air Quality Index based on state CPCB telemetry
+  cpcbDominantPollutant?: string; // Dominant pollutant (PM2.5, PM10, etc.)
+  healthRiskTier?: 'Safe' | 'Moderate' | 'High' | 'Severe';
+  lifestyleRecommendation?: string; // Tailored daily advice for user personas
+  dataSource?: string; // Data provenance indicator
 }
 
 export interface AirQualityData {
@@ -126,6 +146,7 @@ export interface AirQualityData {
 export interface MarineData {
   waveHeight: number; // meters
   waveDirection: number;
+  wavePeriod?: number; // seconds
   waterTemperature: number;
   tideStatus: 'Rising' | 'High' | 'Falling' | 'Low';
   swimSafety: 'Safe' | 'Caution' | 'Dangerous';

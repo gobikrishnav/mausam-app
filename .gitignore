@@ -36,3 +36,6 @@ android/app/build
 mausam_flutter/build/
 mausam_flutter/.dart_tool/
 
+# Raw Heavy Binary Datasets (model weights are pre-compiled in src/data/)
+*.grd
+

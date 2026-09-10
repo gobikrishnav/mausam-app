@@ -13,15 +13,25 @@ import {
   Cpu,
   PhoneCall,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Globe
 } from 'lucide-react';
 import { MobileContainer } from '../../components/layout/MobileContainer';
 import { useAppStore } from '../../store/useAppStore';
 import { useSafeClerk } from '../../components/auth/useSafeClerk';
 import { getCleanDisplayName, getInitials } from '../../utils/userUtils';
+import { useTranslation } from '../../i18n/useTranslation';
+
+import { 
+  testGovApiConnectivity, 
+  GovApiHealthStatus, 
+  STORAGE_KEYS as GOV_KEYS,
+  DEFAULT_DATAGOV_KEY 
+} from '../../services/indianGovApiService';
 
 export const SettingsScreen: React.FC = () => {
   const navigate = useNavigate();
+  const { t, currentLanguageItem, supportedLanguages, setLanguage } = useTranslation();
   const { user: clerkUser, signOut: clerkSignOut, isAvailable: isClerkAvailable } = useSafeClerk();
   const { 
     user, 
@@ -45,6 +55,13 @@ export const SettingsScreen: React.FC = () => {
   const [clerkKey, setClerkKey] = useState<string>(() => localStorage.getItem('mausam_clerk_key') || import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_bW9yZS1tYXJtb3NldC0zNC5jbGVyay5hY2NvdW50cy5kZXYk');
   const [isSavedClerkKey, setIsSavedClerkKey] = useState<boolean>(false);
   const [mlResetSuccess, setMlResetSuccess] = useState<boolean>(false);
+  
+  // Indian Government Data & API Integration State
+  const [dataGovKey, setDataGovKey] = useState<string>(() => localStorage.getItem(GOV_KEYS.DATA_GOV_API_KEY) || DEFAULT_DATAGOV_KEY);
+  const [isSavedDataGovKey, setIsSavedDataGovKey] = useState<boolean>(false);
+  const [useGovApi, setUseGovApi] = useState<boolean>(() => localStorage.getItem(GOV_KEYS.GOV_MODE_ENABLED) !== 'false');
+  const [govHealthStatuses, setGovHealthStatuses] = useState<GovApiHealthStatus[] | null>(null);
+  const [isTestingGovApi, setIsTestingGovApi] = useState<boolean>(false);
 
   const handleSignOut = async () => {
     try {
@@ -64,6 +81,28 @@ export const SettingsScreen: React.FC = () => {
     localStorage.setItem('mausam_clerk_key', clerkKey.trim());
     setIsSavedClerkKey(true);
     setTimeout(() => setIsSavedClerkKey(false), 2000);
+  };
+
+  const handleSaveDataGovKey = () => {
+    localStorage.setItem(GOV_KEYS.DATA_GOV_API_KEY, dataGovKey.trim());
+    setIsSavedDataGovKey(true);
+    setTimeout(() => setIsSavedDataGovKey(false), 2000);
+  };
+
+  const handleToggleGovMode = () => {
+    const next = !useGovApi;
+    setUseGovApi(next);
+    localStorage.setItem(GOV_KEYS.GOV_MODE_ENABLED, String(next));
+  };
+
+  const handleTestGovConnectivity = async () => {
+    setIsTestingGovApi(true);
+    try {
+      const statuses = await testGovApiConnectivity();
+      setGovHealthStatuses(statuses);
+    } finally {
+      setIsTestingGovApi(false);
+    }
   };
 
   const handleResetMlWeights = () => {
@@ -207,6 +246,108 @@ export const SettingsScreen: React.FC = () => {
             {isSavedKey ? 'Saved!' : 'Save'}
           </button>
         </div>
+      </div>
+
+      {/* Official Indian Government Data & APIs Card */}
+      <div className="bg-white rounded-2xl p-4 space-y-3.5 border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#082046] uppercase tracking-wider">
+            <span className="text-base">🏛️</span>
+            <span>Indian Govt Data & APIs</span>
+          </div>
+          <button
+            onClick={handleToggleGovMode}
+            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
+              useGovApi 
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-300' 
+                : 'bg-slate-100 text-slate-600 border-slate-300'
+            }`}
+          >
+            {useGovApi ? '🟢 Active Gateway' : '⚪ Secondary Mode'}
+          </button>
+        </div>
+
+        <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
+          Direct ingestion from <strong>data.gov.in</strong> (Open Govt Data), <strong>IMD</strong> (Ministry of Earth Sciences), <strong>CPCB</strong> (National AQI Grid), <strong>INCOIS</strong> (Ocean State), and <strong>ISRO SAC</strong> (INSAT-3DS).
+        </p>
+
+        {/* Status Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
+          <div className="p-2 rounded-xl bg-slate-50 border border-slate-200">
+            <span className="text-[9px] font-bold text-slate-500 uppercase block">data.gov.in</span>
+            <span className="text-xs font-black text-emerald-700 block">OGD India</span>
+            <span className="text-[8px] text-slate-500 block">CPCB Resource</span>
+          </div>
+          <div className="p-2 rounded-xl bg-slate-50 border border-slate-200">
+            <span className="text-[9px] font-bold text-slate-500 uppercase block">IMD / MoES</span>
+            <span className="text-xs font-black text-emerald-700 block">AWS Network</span>
+            <span className="text-[8px] text-slate-500 block">1,200+ Stations</span>
+          </div>
+          <div className="p-2 rounded-xl bg-slate-50 border border-slate-200">
+            <span className="text-[9px] font-bold text-slate-500 uppercase block">CPCB CAAQMS</span>
+            <span className="text-xs font-black text-emerald-700 block">NAQI Grid</span>
+            <span className="text-[8px] text-slate-500 block">Real-time PM2.5</span>
+          </div>
+          <div className="p-2 rounded-xl bg-slate-50 border border-slate-200">
+            <span className="text-[9px] font-bold text-slate-500 uppercase block">INCOIS</span>
+            <span className="text-xs font-black text-emerald-700 block">Ocean Swell</span>
+            <span className="text-[8px] text-slate-500 block">Coastal Waves</span>
+          </div>
+        </div>
+
+        {/* Data.gov.in API Key input */}
+        <div className="space-y-1">
+          <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+            data.gov.in API Key (Optional Personal Key)
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Paste data.gov.in API Key..."
+              value={dataGovKey}
+              onChange={(e) => setDataGovKey(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#0E468A]"
+            />
+            <button
+              onClick={handleSaveDataGovKey}
+              className="px-3 py-2 rounded-xl bg-[#0E468A] text-white text-xs font-bold shadow-xs hover:bg-[#082046]"
+            >
+              {isSavedDataGovKey ? 'Saved!' : 'Save'}
+            </button>
+          </div>
+        </div>
+
+        {/* Diagnostics Button & Output */}
+        <div className="pt-1 flex items-center justify-between border-t border-slate-100">
+          <button
+            onClick={handleTestGovConnectivity}
+            disabled={isTestingGovApi}
+            className="py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold flex items-center gap-1.5 transition-colors"
+          >
+            <span>{isTestingGovApi ? 'Testing Endpoints...' : '⚡ Test Govt Endpoints'}</span>
+          </button>
+          <span className="text-[10px] text-slate-500 font-medium">
+            Localhost Reverse Proxy Active
+          </span>
+        </div>
+
+        {/* Diagnostics Output */}
+        {govHealthStatuses && (
+          <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200 space-y-1.5 text-xs">
+            <span className="text-[10px] font-black text-slate-800 uppercase tracking-wider block">
+              Diagnostics Report:
+            </span>
+            {govHealthStatuses.map((st, i) => (
+              <div key={i} className="flex items-center justify-between text-[11px] py-0.5 border-b border-slate-200/50 last:border-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="font-semibold text-slate-800">{st.name}</span>
+                </div>
+                <span className="font-mono text-[10px] text-slate-600">{st.latencyMs}ms ({st.status})</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Clerk Authentication Settings Card */}
@@ -363,6 +504,54 @@ export const SettingsScreen: React.FC = () => {
               severeOnly ? 'translate-x-4' : 'translate-x-0'
             }`} />
           </button>
+        </div>
+      </div>
+
+      {/* Regional Language Preferences */}
+      <div className="bg-white rounded-2xl p-4 space-y-3 border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#0E468A] uppercase tracking-wider">
+            <Globe className="w-4 h-4 text-amber-500" />
+            <span>{t('language', 'Language')} • भाषा • மொழி</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('mausam:open_language_modal'))}
+            className="text-xs font-bold text-[#0E468A] hover:underline flex items-center gap-0.5"
+          >
+            <span>Change</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <p className="text-[11px] text-slate-500 font-medium">
+          Current language: <strong className="text-slate-900">{currentLanguageItem.name} ({currentLanguageItem.nativeName})</strong>
+        </p>
+
+        {/* 10 Language Quick Chips */}
+        <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 pt-1">
+          {supportedLanguages.map((lang) => {
+            const isSelected = currentLanguageItem.id === lang.id;
+            return (
+              <button
+                key={lang.id}
+                type="button"
+                onClick={() => setLanguage(lang.id)}
+                className={`py-2 px-2.5 rounded-xl border text-left transition-all text-xs flex items-center justify-between cursor-pointer ${
+                  isSelected
+                    ? 'border-[#0E468A] bg-blue-50/90 text-[#082046] font-black ring-1 ring-[#0E468A]/30'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white hover:bg-slate-50'
+                }`}
+              >
+                <div className="truncate">
+                  <span className="block font-bold leading-none">{lang.nativeName}</span>
+                  <span className="text-[9px] text-slate-400 block mt-0.5 leading-none">{lang.name}</span>
+                </div>
+                {isSelected && <span className="text-[#0E468A] font-bold text-xs">✓</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
 

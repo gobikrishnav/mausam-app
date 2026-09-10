@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -13,32 +13,149 @@ import {
   Satellite as SatelliteIcon,
   Play,
   Pause,
-  Sliders
+  Sliders,
+  Route,
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
+  Shirt,
+  AlertTriangle,
+  Layers,
+  Clock,
+  HeartPulse,
+  X,
+  Droplets,
+  Sun
 } from 'lucide-react';
 import L from 'leaflet';
 import { MobileContainer } from '../components/layout/MobileContainer';
 import { useAppStore } from '../store/useAppStore';
+import { useTranslation } from '../i18n/useTranslation';
+import { 
+  ALL_DESTINATIONS_TELEMETRY, 
+  DestinationTelemetry, 
+  generateTransitAdvisory, 
+  TransitJourneyAdvisory
+} from '../services/destinationService';
 
 type WeatherLayerType = 'traffic' | 'precipitation' | 'satellite' | 'temperature' | 'wind' | 'aqi';
+type MapViewMode = 'layers' | 'destinations';
+type DestinationCategoryFilter = 'all' | 'hill_stations' | 'coastal' | 'pilgrimage' | 'agriculture' | 'cyclone_zones';
 
 export const MapScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { currentLocation, savedLocations, weather } = useAppStore();
+  const { currentLocation, savedLocations, weather, airQuality } = useAppStore();
+  const { t } = useTranslation();
   
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
+  const destinationLayerGroupRef = useRef<L.LayerGroup | null>(null);
+  const routeLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const satelliteOverlayRef = useRef<L.ImageOverlay | null>(null);
   const rainViewerTileLayerRef = useRef<L.TileLayer | null>(null);
   const tomtomTileLayerRef = useRef<L.TileLayer | null>(null);
+  const carouselScrollRef = useRef<HTMLDivElement>(null);
 
-  const [activeLayer, setActiveLayer] = useState<WeatherLayerType>('traffic');
+  // Core Screen State
+  const [viewMode, setViewMode] = useState<MapViewMode>('destinations');
+  const [activeLayer, setActiveLayer] = useState<WeatherLayerType>('precipitation');
   const [satOpacity, setSatOpacity] = useState<number>(0.85);
   const [tomtomApiKey] = useState<string>(() => localStorage.getItem('mausam_tomtom_key') || import.meta.env.VITE_TOMTOM_API_KEY || '0VGms4e2HWfXZ767rZ1weQR64LyEqgI6');
   const [isTimelinePlaying, setIsTimelinePlaying] = useState<boolean>(false);
   const [rainViewerHost, setRainViewerHost] = useState<string>('https://tilecache.rainviewer.com');
   const [radarFrames, setRadarFrames] = useState<Array<{ time: number; path: string }>>([]);
   const [currentPrecipIndex, setCurrentPrecipIndex] = useState<number>(0);
+
+  // Destination & Journey Routing State
+  const [selectedCategory, setSelectedCategory] = useState<DestinationCategoryFilter>('all');
+  const [selectedDestination, setSelectedDestination] = useState<DestinationTelemetry | null>(null);
+  const [transitAdvisory, setTransitAdvisory] = useState<TransitJourneyAdvisory | null>(null);
+  const [isAdvisoryModalOpen, setIsAdvisoryModalOpen] = useState<boolean>(false);
+  const [mapPinDisplay, setMapPinDisplay] = useState<'aqi' | 'temp'>('aqi');
+
+  // Filtered destination list
+  const filteredDestinations = useMemo(() => {
+    if (selectedCategory === 'all') return ALL_DESTINATIONS_TELEMETRY;
+    return ALL_DESTINATIONS_TELEMETRY.filter(d => d.category === selectedCategory);
+  }, [selectedCategory]);
+
+  // Handle Destination Selection & Route Drawing
+  const handleSelectDestination = useCallback((dest: DestinationTelemetry) => {
+    setSelectedDestination(dest);
+    
+    // Generate Source-to-Destination Transit Telemetry & Advice
+    const sourceLoc = currentLocation;
+    const advisory = generateTransitAdvisory(
+      sourceLoc, 
+      dest, 
+      weather?.temperature, 
+      airQuality?.aqi
+    );
+    setTransitAdvisory(advisory);
+
+    // Render Route on Map
+    const map = mapInstanceRef.current;
+    const routeLg = routeLayerGroupRef.current;
+    if (!map || !routeLg) return;
+
+    routeLg.clearLayers();
+
+    // Animated glow polyline
+    L.polyline(advisory.routeCoordinates, {
+      color: '#0E468A',
+      weight: 5,
+      opacity: 0.9,
+      dashArray: '6, 8',
+      lineCap: 'round',
+      lineJoin: 'round',
+    }).addTo(routeLg);
+
+    // Glowing casing line
+    L.polyline(advisory.routeCoordinates, {
+      color: '#38BDF8',
+      weight: 10,
+      opacity: 0.35,
+    }).addTo(routeLg);
+
+    // Destination Pin with Flag
+    const destPinIcon = L.divIcon({
+      className: 'dest-flag-pin',
+      html: `
+        <div class="flex items-center gap-1 bg-red-600 text-white px-2 py-1 rounded-full shadow-lg border-2 border-white text-xs font-black animate-bounce">
+          <span>🏁</span>
+          <span>${dest.name}</span>
+        </div>
+      `,
+      iconSize: [80, 26],
+      iconAnchor: [40, 26],
+    });
+
+    L.marker([dest.latitude, dest.longitude], { icon: destPinIcon }).addTo(routeLg);
+
+    // Fit bounds to display both origin and destination comfortably
+    const bounds = L.latLngBounds([
+      [sourceLoc.latitude, sourceLoc.longitude],
+      [dest.latitude, dest.longitude]
+    ]);
+    map.flyToBounds(bounds, {
+      padding: [70, 70],
+      duration: 1.2,
+      maxZoom: 9,
+    });
+  }, [currentLocation, weather, airQuality]);
+
+  const handleClearRoute = () => {
+    setSelectedDestination(null);
+    setTransitAdvisory(null);
+    setIsAdvisoryModalOpen(false);
+    if (routeLayerGroupRef.current) {
+      routeLayerGroupRef.current.clearLayers();
+    }
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo([currentLocation.latitude, currentLocation.longitude], 6, { duration: 1.0 });
+    }
+  };
 
   // 1. Initialize Map Base
   useEffect(() => {
@@ -57,9 +174,15 @@ export const MapScreen: React.FC = () => {
       maxZoom: 19,
     }).addTo(map);
 
-    // Dedicated layer group for dynamic markers/vectors
+    // Layer groups
     const lg = L.layerGroup().addTo(map);
     layerGroupRef.current = lg;
+
+    const destLg = L.layerGroup().addTo(map);
+    destinationLayerGroupRef.current = destLg;
+
+    const routeLg = L.layerGroup().addTo(map);
+    routeLayerGroupRef.current = routeLg;
 
     // INSAT-3DS Mercator Satellite Overlay
     const imageBounds: L.LatLngBoundsExpression = [
@@ -89,7 +212,7 @@ export const MapScreen: React.FC = () => {
     }).addTo(map).bindPopup(`
       <div class="p-1 text-slate-900">
         <b class="text-sm text-[#082046]">${currentLocation.name}</b><br/>
-        <span class="text-xs text-slate-600">Current Observation Station</span><br/>
+        <span class="text-xs text-slate-600">${t('source')} (Observation Station)</span><br/>
         <span class="text-xs font-bold text-[#0E468A]">${weather ? weather.temperature + '°C • ' + weather.conditionText : ''}</span>
       </div>
     `);
@@ -109,9 +232,9 @@ export const MapScreen: React.FC = () => {
       map.remove();
       mapInstanceRef.current = null;
     };
-  }, [currentLocation, savedLocations, weather]);
+  }, [currentLocation, savedLocations, weather, t, satOpacity]);
 
-  // 2. Fetch RainViewer live precipitation metadata with valid paths
+  // 2. Fetch RainViewer live precipitation metadata
   useEffect(() => {
     fetch('https://api.rainviewer.com/public/weather-maps.json')
       .then(res => res.json())
@@ -142,16 +265,14 @@ export const MapScreen: React.FC = () => {
     return () => clearInterval(interval);
   }, [isTimelinePlaying, radarFrames.length]);
 
-  // 3. Render and switch layers dynamically
+  // 3. Render and switch GIS Layers dynamically (when in layers mode)
   useEffect(() => {
     const map = mapInstanceRef.current;
     const lg = layerGroupRef.current;
     if (!map || !lg) return;
 
-    // Clear previous vectors and markers
     lg.clearLayers();
 
-    // Clean up tile overlays
     if (satelliteOverlayRef.current && map.hasLayer(satelliteOverlayRef.current)) {
       map.removeLayer(satelliteOverlayRef.current);
     }
@@ -164,7 +285,11 @@ export const MapScreen: React.FC = () => {
       tomtomTileLayerRef.current = null;
     }
 
-    // LAYER A: SATELLITE (INSAT-3DS)
+    if (viewMode !== 'layers') {
+      return;
+    }
+
+    // SATELLITE
     if (activeLayer === 'satellite') {
       if (satelliteOverlayRef.current) {
         satelliteOverlayRef.current.addTo(map);
@@ -172,7 +297,7 @@ export const MapScreen: React.FC = () => {
       }
     }
 
-    // LAYER B: PRECIPITATION (RainViewer Live Doppler Precipitation + IMD DWR Stations)
+    // PRECIPITATION
     else if (activeLayer === 'precipitation') {
       const frame = radarFrames[currentPrecipIndex] || radarFrames[radarFrames.length - 1];
       if (frame && frame.path) {
@@ -185,7 +310,7 @@ export const MapScreen: React.FC = () => {
         rainViewerTileLayerRef.current = precipLayer;
       }
 
-      // 10 Official IMD Doppler Weather Radar Stations across India
+      // IMD Radar Stations
       const imdDwrStations = [
         { name: 'Mumbai (Colaba & Veravali DWR)', lat: 18.9067, lng: 72.8147, rangeKm: 250, dbz: 48, status: 'Active Coastal Rain Echoes' },
         { name: 'Delhi (Mausam Bhawan DWR)', lat: 28.5886, lng: 77.2208, rangeKm: 250, dbz: 32, status: 'Light Precipitation Trace' },
@@ -219,18 +344,10 @@ export const MapScreen: React.FC = () => {
             <span class="text-[10px] text-slate-500 mt-0.5 block">Coverage Radius: ${st.rangeKm} km</span>
           </div>
         `);
-
-        const radarPin = L.divIcon({
-          className: 'radar-station-pin',
-          html: '<div style="width:20px;height:20px;border-radius:50%;background:#082046;color:#FDE047;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;">📡</div>',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
-        });
-        L.marker([st.lat, st.lng], { icon: radarPin }).addTo(lg);
       });
     }
 
-    // LAYER C: TRAFFIC FLOW (TomTom Tiles OR High-Fidelity Vector Engine)
+    // TRAFFIC
     else if (activeLayer === 'traffic') {
       if (tomtomApiKey.trim()) {
         const tomtomUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?key=${tomtomApiKey.trim()}`;
@@ -241,254 +358,84 @@ export const MapScreen: React.FC = () => {
         }).addTo(map);
         tomtomTileLayerRef.current = tomtomLayer;
       }
-
-      // High-Fidelity Indian Metropolitan & National Highway Transit Corridors
-      const trafficCorridors = [
-        // Delhi NCR & NH-48
-        {
-          name: 'Delhi - Gurugram Expressway (NH-48)',
-          coords: [[28.6139, 77.2090], [28.5355, 77.1000], [28.4595, 77.0266], [28.3800, 76.9500], [28.2500, 76.8500], [26.9124, 75.7873]] as L.LatLngExpression[],
-          color: '#DC2626', // Heavy Congestion
-          speed: '14 km/h',
-          delay: '+22 min delay',
-          status: 'Severe Congestion (Iffco Chowk to Toll)',
-        },
-        {
-          name: 'Delhi Ring Road (DND Flyway)',
-          coords: [[28.5800, 77.2400], [28.5700, 77.3000], [28.5500, 77.3300]] as L.LatLngExpression[],
-          color: '#F59E0B',
-          speed: '32 km/h',
-          delay: '+8 min delay',
-          status: 'Moderate Flow (Ashram Choke Point)',
-        },
-        // Mumbai - Pune Expressway
-        {
-          name: 'Mumbai Western Express Highway',
-          coords: [[19.0176, 72.8561], [19.0760, 72.8777], [19.1136, 72.8697], [19.2183, 72.8600]] as L.LatLngExpression[],
-          color: '#DC2626',
-          speed: '18 km/h',
-          delay: '+16 min delay',
-          status: 'Heavy Peak Traffic (Santacruz to Andheri)',
-        },
-        {
-          name: 'Mumbai - Pune Expressway (NH-48)',
-          coords: [[19.0330, 73.0297], [18.9800, 73.1200], [18.7500, 73.4000], [18.5204, 73.8567]] as L.LatLngExpression[],
-          color: '#16A34A',
-          speed: '82 km/h',
-          delay: 'On Time',
-          status: 'Free Flow (Ghat section clear)',
-        },
-        // Bengaluru Tech Corridor
-        {
-          name: 'Bengaluru Outer Ring Road & Silk Board',
-          coords: [[12.9172, 77.6229], [12.9279, 77.6271], [12.9352, 77.6245], [12.9716, 77.5946]] as L.LatLngExpression[],
-          color: '#DC2626',
-          speed: '9 km/h',
-          delay: '+28 min delay',
-          status: 'Gridlock (Silk Board Junction to Marathahalli)',
-        },
-        {
-          name: 'Bengaluru Electronic City Flyover',
-          coords: [[12.9172, 77.6229], [12.8500, 77.6600], [12.8399, 77.6770]] as L.LatLngExpression[],
-          color: '#16A34A',
-          speed: '70 km/h',
-          delay: 'Normal Flow',
-          status: 'Smooth Transit on Elevated Corridor',
-        },
-        // Chennai OMR & GST Road
-        {
-          name: 'Chennai Old Mahabalipuram Road (IT Corridor)',
-          coords: [[13.0067, 80.2206], [12.9700, 80.2500], [12.9000, 80.2270]] as L.LatLngExpression[],
-          color: '#F59E0B',
-          speed: '28 km/h',
-          delay: '+11 min delay',
-          status: 'Moderate Slowdown (Tidel Park Junction)',
-        },
-        // Hyderabad ORR
-        {
-          name: 'Hyderabad Outer Ring Road (Gachibowli)',
-          coords: [[17.4401, 78.3489], [17.4200, 78.3600], [17.3850, 78.4867]] as L.LatLngExpression[],
-          color: '#16A34A',
-          speed: '78 km/h',
-          delay: 'Clear',
-          status: 'High-Speed Flow',
-        },
-        // Kolkata EM Bypass
-        {
-          name: 'Kolkata Eastern Metropolitan Bypass',
-          coords: [[22.5726, 88.3639], [22.5200, 88.3900], [22.4800, 88.4000]] as L.LatLngExpression[],
-          color: '#F59E0B',
-          speed: '26 km/h',
-          delay: '+12 min delay',
-          status: 'Slow Flow (Science City intersection)',
-        }
-      ];
-
-      trafficCorridors.forEach(c => {
-        // Render highway polyline with glow
-        const poly = L.polyline(c.coords, {
-          color: c.color,
-          weight: 6,
-          opacity: 0.9,
-          lineCap: 'round',
-        }).addTo(lg);
-
-        poly.bindPopup(`
-          <div class="p-1">
-            <b class="text-sm font-bold text-slate-900">${c.name}</b><br/>
-            <span class="text-xs font-bold" style="color: ${c.color}">● ${c.status}</span><br/>
-            <span class="text-xs text-slate-700">Avg Speed: <b>${c.speed}</b> (${c.delay})</span>
-          </div>
-        `);
-
-        // Incident marker at midpoint
-        const midIdx = Math.floor(c.coords.length / 2);
-        const midCoord = c.coords[midIdx];
-        const incidentIcon = L.divIcon({
-          className: 'traffic-incident-pin',
-          html: `
-            <div class="px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-md flex items-center gap-1" style="background-color: ${c.color}; border: 1.5px solid white;">
-              <span>${c.color === '#DC2626' ? '🚨 Jam' : c.color === '#F59E0B' ? '⚠️ Slow' : '🟢 75+'}</span>
-            </div>
-          `,
-          iconSize: [60, 20],
-          iconAnchor: [30, 10],
-        });
-
-        L.marker(midCoord as L.LatLngExpression, { icon: incidentIcon })
-          .addTo(lg)
-          .bindPopup(`
-            <div class="p-1">
-              <b class="text-xs text-slate-900">${c.name}</b><br/>
-              <span class="text-xs font-bold text-slate-700">Speed: ${c.speed} • Delay: ${c.delay}</span>
-            </div>
-          `);
-      });
     }
 
-    // LAYER D: SURFACE TEMPERATURE HEATMAP
+    // TEMPERATURE
     else if (activeLayer === 'temperature') {
-      const cityTemps = [
-        { name: 'New Delhi', lat: 28.6139, lon: 77.2090, temp: 37, min: 27, max: 39, cond: 'Sunny / Hot' },
-        { name: 'Mumbai', lat: 19.0760, lon: 72.8777, temp: 32, min: 26, max: 33, cond: 'Humid' },
-        { name: 'Bengaluru', lat: 12.9716, lon: 77.5946, temp: 27, min: 20, max: 29, cond: 'Pleasant' },
-        { name: 'Chennai', lat: 13.0827, lon: 80.2707, temp: 34, min: 27, max: 36, cond: 'Warm Breezy' },
-        { name: 'Kolkata', lat: 22.5726, lon: 88.3639, temp: 33, min: 26, max: 35, cond: 'Partly Cloudy' },
-        { name: 'Hyderabad', lat: 17.3850, lon: 78.4867, temp: 33, min: 24, max: 35, cond: 'Clear' },
-        { name: 'Ahmedabad', lat: 23.0225, lon: 72.5714, temp: 39, min: 28, max: 41, cond: 'High Heat' },
-        { name: 'Jaipur', lat: 26.9124, lon: 75.7873, temp: 38, min: 27, max: 40, cond: 'Sunny' },
-        { name: 'Srinagar', lat: 34.0837, lon: 74.7973, temp: 17, min: 9, max: 19, cond: 'Cool Mountain' },
-        { name: 'Shimla', lat: 31.1048, lon: 77.1734, temp: 19, min: 11, max: 21, cond: 'Mild' },
-        { name: 'Lucknow', lat: 26.8467, lon: 80.9462, temp: 36, min: 26, max: 38, cond: 'Sunny' },
-        { name: 'Bhopal', lat: 23.2599, lon: 77.4126, temp: 35, min: 25, max: 37, cond: 'Warm' },
-        { name: 'Guwahati', lat: 26.1445, lon: 91.7362, temp: 28, min: 22, max: 30, cond: 'Scattered Clouds' },
-        { name: 'Kochi', lat: 9.9312, lon: 76.2673, temp: 30, min: 25, max: 31, cond: 'Tropical' },
-        { name: 'Patna', lat: 25.5941, lon: 85.1376, temp: 35, min: 26, max: 37, cond: 'Warm' },
-        { name: 'Bhubaneswar', lat: 20.2961, lon: 85.8245, temp: 33, min: 25, max: 35, cond: 'Humid' },
-      ];
-
-      cityTemps.forEach(c => {
-        const isHot = c.temp >= 35;
-        const isCool = c.temp < 25;
+      ALL_DESTINATIONS_TELEMETRY.forEach(c => {
+        const isHot = c.temperature >= 35;
+        const isCool = c.temperature < 20;
         const color = isHot ? '#DC2626' : isCool ? '#0284C7' : '#D97706';
 
-        // Thermal circle halo
-        L.circle([c.lat, c.lon], {
-          radius: 45000,
+        L.circle([c.latitude, c.longitude], {
+          radius: 40000,
           color: color,
           fillColor: color,
-          fillOpacity: 0.25,
+          fillOpacity: 0.22,
           weight: 1.5,
         }).addTo(lg);
 
-        // Thermal badge
         const badgeIcon = L.divIcon({
           className: 'temp-station-pin',
           html: `
             <div class="px-2 py-0.5 rounded-full text-[11px] font-black text-white shadow-md flex items-center justify-center gap-0.5" style="background-color: ${color}; border: 2px solid white;">
-              <span>${c.temp}°</span>
+              <span>${c.temperature}°</span>
             </div>
           `,
           iconSize: [40, 24],
           iconAnchor: [20, 12],
         });
 
-        L.marker([c.lat, c.lon], { icon: badgeIcon })
+        L.marker([c.latitude, c.longitude], { icon: badgeIcon })
           .addTo(lg)
           .bindPopup(`
             <div class="p-1">
               <b class="text-sm text-slate-900">${c.name} Met Station</b><br/>
-              <span class="text-base font-extrabold" style="color: ${color}">${c.temp}°C</span>
-              <span class="text-xs text-slate-500">(${c.cond})</span><br/>
-              <span class="text-xs text-slate-600">Min: ${c.min}°C • Max: ${c.max}°C</span>
+              <span class="text-base font-extrabold" style="color: ${color}">${c.temperature}°C</span>
+              <span class="text-xs text-slate-500">(${c.condition})</span><br/>
+              <span class="text-xs text-slate-600">Min: ${c.minTemp}°C • Max: ${c.maxTemp}°C • Feels: ${c.feelsLike}°C</span>
             </div>
           `);
       });
     }
 
-    // LAYER E: SURFACE WIND VECTORS
+    // WIND
     else if (activeLayer === 'wind') {
-      const windStations = [
-        { name: 'Northern Plains (Delhi)', lat: 28.6139, lon: 77.2090, speed: 14, deg: 310, status: 'Gentle Breeze' },
-        { name: 'Gujarat Coast (Kandla)', lat: 23.01, lon: 70.21, speed: 28, deg: 240, status: 'Fresh Breeze' },
-        { name: 'Mumbai Offshore', lat: 18.90, lon: 72.40, speed: 24, deg: 260, status: 'Moderate Breeze' },
-        { name: 'Goa Coastal Waters', lat: 15.29, lon: 73.70, speed: 22, deg: 250, status: 'Gentle Swell' },
-        { name: 'Southern Tip (Kanyakumari)', lat: 8.08, lon: 77.53, speed: 36, deg: 230, status: 'Strong Breeze' },
-        { name: 'Bay of Bengal (Chennai Offshore)', lat: 13.08, lon: 81.20, speed: 26, deg: 190, status: 'Moderate Wind' },
-        { name: 'Odisha Coast (Puri)', lat: 19.81, lon: 86.20, speed: 30, deg: 200, status: 'Fresh Wind' },
-        { name: 'Bengal Coast (Digha)', lat: 21.62, lon: 87.80, speed: 24, deg: 180, status: 'Breezy' },
-        { name: 'Central Highlands (Bhopal)', lat: 23.25, lon: 77.41, speed: 12, deg: 280, status: 'Light Air' },
-        { name: 'Deccan Plateau (Hyderabad)', lat: 17.38, lon: 78.48, speed: 16, deg: 270, status: 'Gentle' },
-      ];
-
-      windStations.forEach(w => {
-        const isHigh = w.speed >= 30;
+      ALL_DESTINATIONS_TELEMETRY.forEach(w => {
+        const isHigh = w.windSpeed >= 28;
         const color = isHigh ? '#C026D3' : '#0284C7';
 
         const windIcon = L.divIcon({
           className: 'wind-vector-pin',
           html: `
             <div class="flex items-center gap-1 bg-white/95 px-2 py-0.5 rounded-full border border-slate-300 shadow-md text-[10px] font-bold text-slate-800">
-              <span style="transform: rotate(${w.deg}deg); display: inline-block;">➔</span>
-              <span style="color: ${color}; font-weight: 800;">${w.speed} km/h</span>
+              <span style="transform: rotate(${w.windDirection}deg); display: inline-block;">➔</span>
+              <span style="color: ${color}; font-weight: 800;">${w.windSpeed} km/h</span>
             </div>
           `,
           iconSize: [85, 24],
           iconAnchor: [42, 12],
         });
 
-        L.marker([w.lat, w.lon], { icon: windIcon })
+        L.marker([w.latitude, w.longitude], { icon: windIcon })
           .addTo(lg)
           .bindPopup(`
             <div class="p-1">
               <b class="text-xs text-slate-900">${w.name}</b><br/>
-              <span class="text-xs text-slate-600">Velocity: <b>${w.speed} km/h</b> (${w.status})</span><br/>
-              <span class="text-xs text-slate-500">Heading: ${w.deg}° Direction</span>
+              <span class="text-xs text-slate-600">Velocity: <b>${w.windSpeed} km/h</b></span><br/>
+              <span class="text-xs text-slate-500">Heading: ${w.windDirection}° Direction</span>
             </div>
           `);
       });
     }
 
-    // LAYER F: AIR QUALITY INDEX (CPCB AQI)
+    // AQI (CPCB Air Quality Index for All Locations)
     else if (activeLayer === 'aqi') {
-      const aqiStations = [
-        { name: 'Delhi (Anand Vihar)', lat: 28.6468, lon: 77.3160, aqi: 284, pm25: 118, cat: 'Poor', color: '#EA580C' },
-        { name: 'Delhi (Lodhi Road)', lat: 28.5910, lon: 77.2273, aqi: 182, pm25: 72, cat: 'Moderate', color: '#EAB308' },
-        { name: 'Mumbai (BKC)', lat: 19.0657, lon: 72.8682, aqi: 114, pm25: 46, cat: 'Moderate', color: '#EAB308' },
-        { name: 'Mumbai (Colaba)', lat: 18.9067, lon: 72.8147, aqi: 68, pm25: 22, cat: 'Satisfactory', color: '#65A30D' },
-        { name: 'Bengaluru (BTM Layout)', lat: 12.9166, lon: 77.6101, aqi: 48, pm25: 14, cat: 'Good', color: '#16A34A' },
-        { name: 'Chennai (Alandur)', lat: 12.9975, lon: 80.2006, aqi: 72, pm25: 26, cat: 'Satisfactory', color: '#65A30D' },
-        { name: 'Kolkata (Victoria Memorial)', lat: 22.5448, lon: 88.3426, aqi: 164, pm25: 68, cat: 'Moderate', color: '#EAB308' },
-        { name: 'Hyderabad (Sanathnagar)', lat: 17.4563, lon: 78.4439, aqi: 92, pm25: 34, cat: 'Satisfactory', color: '#65A30D' },
-        { name: 'Ahmedabad (Maninagar)', lat: 22.9970, lon: 72.6030, aqi: 178, pm25: 74, cat: 'Moderate', color: '#EAB308' },
-        { name: 'Lucknow (Lalbagh)', lat: 26.8500, lon: 80.9300, aqi: 225, pm25: 94, cat: 'Poor', color: '#EA580C' },
-      ];
-
-      aqiStations.forEach(s => {
+      ALL_DESTINATIONS_TELEMETRY.forEach(s => {
         const aqiPin = L.divIcon({
           className: 'aqi-pin',
           html: `
-            <div class="px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-md flex items-center justify-center gap-1" style="background-color: ${s.color}; border: 1.5px solid white;">
+            <div class="px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-md flex items-center justify-center gap-1" style="background-color: ${s.aqiColor}; border: 1.5px solid white;">
               <span>AQI ${s.aqi}</span>
             </div>
           `,
@@ -496,30 +443,108 @@ export const MapScreen: React.FC = () => {
           iconAnchor: [30, 11],
         });
 
-        L.marker([s.lat, s.lon], { icon: aqiPin })
+        L.marker([s.latitude, s.longitude], { icon: aqiPin })
           .addTo(lg)
           .bindPopup(`
             <div class="p-1">
-              <b class="text-sm text-slate-900">${s.name}</b><br/>
-              <span class="text-sm font-black" style="color: ${s.color}">AQI ${s.aqi} (${s.cat})</span><br/>
-              <span class="text-xs text-slate-600">PM2.5: ${s.pm25} µg/m³ • CPCB Station</span>
+              <b class="text-sm text-slate-900">${s.name}, ${s.region}</b><br/>
+              <span class="text-sm font-black" style="color: ${s.aqiColor}">AQI ${s.aqi} (${s.aqiCategory})</span><br/>
+              <span class="text-xs text-slate-600">PM2.5: ${s.pm25} µg/m³ • PM10: ${s.pm10} µg/m³</span><br/>
+              <p class="text-[11px] text-slate-500 mt-1 italic">${s.aqiAdvisory}</p>
             </div>
           `);
       });
     }
 
-  }, [activeLayer, satOpacity, tomtomApiKey, radarFrames, currentPrecipIndex, rainViewerHost]);
+  }, [activeLayer, viewMode, satOpacity, tomtomApiKey, radarFrames, currentPrecipIndex, rainViewerHost]);
 
-  // Precipitation Timeline Animation Loop
+  // 4. Render All 26 Interactive Destination Markers (Pins) on Map
   useEffect(() => {
-    if (!isTimelinePlaying || activeLayer !== 'precipitation' || radarFrames.length <= 1) return;
+    const map = mapInstanceRef.current;
+    const destLg = destinationLayerGroupRef.current;
+    if (!map || !destLg) return;
 
-    const interval = setInterval(() => {
-      setCurrentPrecipIndex(prev => (prev + 1) % radarFrames.length);
-    }, 1200);
+    destLg.clearLayers();
 
-    return () => clearInterval(interval);
-  }, [isTimelinePlaying, activeLayer, radarFrames]);
+    // When in Destinations mode OR AQI layer, display rich interactive destination pins
+    if (viewMode === 'destinations' || activeLayer === 'aqi') {
+      filteredDestinations.forEach(dest => {
+        const isSelected = selectedDestination?.id === dest.id;
+        
+        let pinHtml = '';
+        if (mapPinDisplay === 'aqi') {
+          pinHtml = `
+            <div class="cursor-pointer transition-transform transform hover:scale-110 ${isSelected ? 'scale-125 z-50' : ''}">
+              <div class="px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-md flex items-center gap-1 border-2 ${isSelected ? 'border-amber-400 ring-2 ring-amber-400/50' : 'border-white'}" style="background-color: ${dest.aqiColor};">
+                <span>${dest.aqi}</span>
+                <span class="text-[8px] opacity-90 uppercase">${dest.aqiCategory.slice(0, 3)}</span>
+              </div>
+            </div>
+          `;
+        } else {
+          pinHtml = `
+            <div class="cursor-pointer transition-transform transform hover:scale-110 ${isSelected ? 'scale-125 z-50' : ''}">
+              <div class="px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-md flex items-center gap-1 border-2 ${isSelected ? 'border-amber-400 ring-2 ring-amber-400/50' : 'border-white'} bg-[#0E468A]">
+                <span>${dest.temperature}°</span>
+                <span class="text-[8px] opacity-80 font-normal">${dest.name.slice(0, 4)}</span>
+              </div>
+            </div>
+          `;
+        }
+
+        const markerIcon = L.divIcon({
+          className: 'dest-interactive-pin',
+          html: pinHtml,
+          iconSize: [50, 24],
+          iconAnchor: [25, 12],
+        });
+
+        const marker = L.marker([dest.latitude, dest.longitude], { icon: markerIcon }).addTo(destLg);
+        
+        marker.on('click', () => {
+          handleSelectDestination(dest);
+        });
+
+        marker.bindPopup(`
+          <div class="p-1 min-w-[180px]">
+            <div class="flex items-center justify-between gap-2">
+              <b class="text-sm text-[#082046]">${dest.name}</b>
+              <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 uppercase">${dest.category.replace('_', ' ')}</span>
+            </div>
+            <div class="text-xs text-slate-500 font-medium">${dest.region}</div>
+            <div class="mt-1.5 flex items-center justify-between border-t border-slate-100 pt-1">
+              <div>
+                <span class="text-base font-black text-slate-900">${dest.temperature}°C</span>
+                <span class="text-[10px] text-slate-500 block">${dest.condition}</span>
+              </div>
+              <div class="text-right">
+                <span class="text-xs font-black px-1.5 py-0.5 rounded text-white" style="background-color: ${dest.aqiColor}">
+                  AQI ${dest.aqi}
+                </span>
+                <span class="text-[10px] text-slate-500 block mt-0.5">PM2.5: ${dest.pm25}</span>
+              </div>
+            </div>
+            <button 
+              id="popup-btn-${dest.id}"
+              class="w-full mt-2 py-1 px-2 rounded-lg bg-[#0E468A] text-white text-[10px] font-bold tracking-wide hover:bg-[#0A3266] transition-colors"
+            >
+              Plan Trip & Route ➔
+            </button>
+          </div>
+        `);
+
+        marker.on('popupopen', () => {
+          const btn = document.getElementById(`popup-btn-${dest.id}`);
+          if (btn) {
+            btn.onclick = () => {
+              handleSelectDestination(dest);
+              setIsAdvisoryModalOpen(true);
+            };
+          }
+        });
+      });
+    }
+  }, [viewMode, activeLayer, filteredDestinations, selectedDestination, mapPinDisplay, handleSelectDestination]);
 
   // Center on User GPS
   const handleLocateMe = () => {
@@ -544,6 +569,13 @@ export const MapScreen: React.FC = () => {
     }
   };
 
+  const scrollCarousel = (direction: 'left' | 'right') => {
+    if (carouselScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -280 : 280;
+      carouselScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
   // Layer details configuration
   const getLayerMeta = () => {
     switch (activeLayer) {
@@ -556,7 +588,6 @@ export const MapScreen: React.FC = () => {
             { label: 'Moderate (30-50)', color: '#F59E0B' },
             { label: 'Heavy Jam (<15)', color: '#DC2626' },
           ],
-          apiKeyReq: 'TomTom Traffic API (Free key at developer.tomtom.com, 2,500 daily requests)',
         };
       case 'precipitation':
         const curFrame = radarFrames[currentPrecipIndex];
@@ -569,7 +600,6 @@ export const MapScreen: React.FC = () => {
             { label: 'Moderate Rain (5-15 mm/h)', color: '#10B981' },
             { label: 'Heavy Downpour (30+ mm/h)', color: '#EF4444' },
           ],
-          apiKeyReq: 'None! RainViewer Public Precipitation API (100% Free & Open)',
         };
       case 'satellite':
         return {
@@ -580,7 +610,6 @@ export const MapScreen: React.FC = () => {
             { label: 'Mid-Level Cloud', color: '#94A3B8' },
             { label: 'Severe Storm Top', color: '#FFFFFF' },
           ],
-          apiKeyReq: 'None! Bundled ISRO / IMD National Satellite Meteorological Centre',
         };
       case 'temperature':
         return {
@@ -591,7 +620,6 @@ export const MapScreen: React.FC = () => {
             { label: 'Comfortable (20-32°C)', color: '#D97706' },
             { label: 'Heat Alert (35°C+)', color: '#DC2626' },
           ],
-          apiKeyReq: 'None! Open-Meteo & IMD Public Meteorological Grid (100% Free)',
         };
       case 'wind':
         return {
@@ -602,18 +630,16 @@ export const MapScreen: React.FC = () => {
             { label: 'Moderate (15-30)', color: '#0284C7' },
             { label: 'Gale Warning (35+)', color: '#C026D3' },
           ],
-          apiKeyReq: 'None! Free Meteorological Surface Observation Grid',
         };
       case 'aqi':
         return {
           title: 'Air Quality Index (CPCB AQI Standard)',
-          sub: 'Central Pollution Control Board Grid',
+          sub: 'Central Pollution Control Board Grid across All Locations',
           legendColors: [
             { label: 'Good (0-50)', color: '#16A34A' },
             { label: 'Moderate (101-200)', color: '#EAB308' },
             { label: 'Poor / Severe (200+)', color: '#EA580C' },
           ],
-          apiKeyReq: 'None! Central Pollution Control Board (CPCB) Public Air Quality Feed',
         };
     }
   };
@@ -641,52 +667,112 @@ export const MapScreen: React.FC = () => {
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <h2 className="text-xs font-black uppercase tracking-wider text-[#082046]">
-                  Interactive Meteorological Map
+                  {t('map_title')}
                 </h2>
               </div>
-              <span className="text-[10px] text-slate-500 font-medium">
+              <span className="text-[10px] text-slate-500 font-medium truncate max-w-[170px] inline-block">
                 {currentLocation.name} Met Zone
               </span>
             </div>
           </div>
 
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-            IMD Radar
-          </span>
+          {/* Mode Switcher Toggle Pill */}
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+            <button
+              onClick={() => setViewMode('destinations')}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-black transition-all ${
+                viewMode === 'destinations'
+                  ? 'bg-[#0E468A] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Route className="w-3 h-3" />
+              <span>{t('destination')}</span>
+            </button>
+            <button
+              onClick={() => setViewMode('layers')}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-black transition-all ${
+                viewMode === 'layers'
+                  ? 'bg-[#0E468A] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Layers className="w-3 h-3" />
+              <span>GIS</span>
+            </button>
+          </div>
         </div>
 
-        {/* Floating Horizontal Layer Selector Pills */}
-        <div className="pointer-events-auto bg-white/95 backdrop-blur-md p-1.5 rounded-2xl shadow-md border border-slate-200/90 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          {[
-            { id: 'traffic' as const, label: 'Traffic', icon: Car },
-            { id: 'precipitation' as const, label: 'Precipitation', icon: CloudRain },
-            { id: 'satellite' as const, label: 'INSAT-3DS', icon: SatelliteIcon },
-            { id: 'temperature' as const, label: 'Temp', icon: Thermometer },
-            { id: 'wind' as const, label: 'Wind', icon: Wind },
-            { id: 'aqi' as const, label: 'AQI Air', icon: Activity },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isSelected = activeLayer === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveLayer(item.id)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  isSelected
-                    ? 'bg-[#0E468A] text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Floating Controls Row: Category Filter or GIS Layers */}
+        {viewMode === 'destinations' ? (
+          <div className="pointer-events-auto bg-white/95 backdrop-blur-md p-1.5 rounded-2xl shadow-md border border-slate-200/90 flex items-center justify-between gap-1">
+            {/* Category Pills */}
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1 py-0.5">
+              {[
+                { id: 'all' as const, label: t('all_destinations') },
+                { id: 'hill_stations' as const, label: `🏔️ ${t('cat_hill_stations')}` },
+                { id: 'coastal' as const, label: `🏖️ ${t('cat_coastal')}` },
+                { id: 'pilgrimage' as const, label: `🛕 ${t('cat_pilgrimage')}` },
+                { id: 'agriculture' as const, label: `🌾 ${t('cat_agriculture')}` },
+                { id: 'cyclone_zones' as const, label: `⚠️ ${t('cat_cyclone')}` },
+              ].map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                    selectedCategory === cat.id
+                      ? 'bg-[#0E468A] text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Pin display toggle: AQI vs Temp */}
+            <button
+              onClick={() => setMapPinDisplay(prev => prev === 'aqi' ? 'temp' : 'aqi')}
+              className="flex-shrink-0 px-2 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[10px] font-black"
+              title="Toggle Map Pin Badge: AQI or Temperature"
+            >
+              {mapPinDisplay === 'aqi' ? 'AQI Mode' : 'Temp °C'}
+            </button>
+          </div>
+        ) : (
+          /* GIS Layer Selector Pills */
+          <div className="pointer-events-auto bg-white/95 backdrop-blur-md p-1.5 rounded-2xl shadow-md border border-slate-200/90 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {[
+              { id: 'precipitation' as const, label: t('layer_precipitation'), icon: CloudRain },
+              { id: 'aqi' as const, label: t('layer_aqi'), icon: Activity },
+              { id: 'traffic' as const, label: t('layer_traffic'), icon: Car },
+              { id: 'temperature' as const, label: t('layer_temp'), icon: Thermometer },
+              { id: 'satellite' as const, label: t('layer_satellite'), icon: SatelliteIcon },
+              { id: 'wind' as const, label: t('layer_wind'), icon: Wind },
+            ].map((item) => {
+              const Icon = item.icon;
+              const isSelected = activeLayer === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveLayer(item.id)}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    isSelected
+                      ? 'bg-[#0E468A] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Right Floating Quick Tools */}
-      <div className="absolute right-3 top-44 z-10 flex flex-col gap-2 pointer-events-auto">
+      <div className="absolute right-3 top-36 z-10 flex flex-col gap-2 pointer-events-auto">
         <button
           onClick={handleLocateMe}
           className="p-2.5 rounded-xl bg-white/95 backdrop-blur-md text-[#0E468A] shadow-md border border-slate-200 hover:bg-slate-50 transition-colors"
@@ -702,6 +788,16 @@ export const MapScreen: React.FC = () => {
         >
           IND
         </button>
+
+        {selectedDestination && (
+          <button
+            onClick={handleClearRoute}
+            className="p-2.5 rounded-xl bg-rose-500 text-white shadow-md hover:bg-rose-600 transition-colors"
+            title="Clear Route"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
 
         <div className="flex flex-col bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200 overflow-hidden">
           <button
@@ -721,70 +817,420 @@ export const MapScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom Floating Active Layer Telemetry Drawer */}
-      <div 
-        className="absolute left-3 right-3 z-10 pointer-events-auto"
-        style={{ bottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}
-      >
-        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-3.5 shadow-xl space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-xs font-black text-[#082046] flex items-center gap-1.5">
-                <span>{meta.title}</span>
-              </h4>
-              <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
-                {meta.sub}
-              </span>
+      {/* BOTTOM SECTION: Destination Slides Carousel OR GIS Layer Telemetry Drawer */}
+      {viewMode === 'destinations' ? (
+        <div 
+          className="absolute left-0 right-0 z-10 pointer-events-auto"
+          style={{ bottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
+        >
+          <div className="px-3">
+            {/* Header with scroll buttons */}
+            <div className="flex items-center justify-between mb-1.5 px-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-[#082046] tracking-wide">
+                  {t('destinations_title')}
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#0E468A]/10 text-[#0E468A]">
+                  {filteredDestinations.length}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => scrollCarousel('left')}
+                  className="p-1 rounded-lg bg-white/90 shadow border border-slate-200 text-slate-600 hover:text-slate-900"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => scrollCarousel('right')}
+                  className="p-1 rounded-lg bg-white/90 shadow border border-slate-200 text-slate-600 hover:text-slate-900"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
-            {/* Precipitation timeline playback toggle */}
-            {activeLayer === 'precipitation' && (
-              <button
-                onClick={() => setIsTimelinePlaying(!isTimelinePlaying)}
-                className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs transition-all ${
-                  isTimelinePlaying ? 'bg-amber-500 text-slate-950' : 'bg-[#0E468A] text-white'
-                }`}
-              >
-                {isTimelinePlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                <span>{isTimelinePlaying ? 'Pause' : 'Loop'}</span>
-              </button>
-            )}
+            {/* Horizontal Snap Slides Carousel */}
+            <div 
+              ref={carouselScrollRef}
+              className="flex items-stretch gap-3 overflow-x-auto no-scrollbar pb-1 snap-x snap-mandatory"
+            >
+              {filteredDestinations.map((dest) => {
+                const isSelected = selectedDestination?.id === dest.id;
+                return (
+                  <div
+                    key={dest.id}
+                    onClick={() => handleSelectDestination(dest)}
+                    className={`snap-start flex-shrink-0 w-[290px] rounded-2xl p-3.5 cursor-pointer transition-all duration-200 ${
+                      isSelected
+                        ? 'bg-white shadow-xl ring-2 ring-[#0E468A] border-transparent'
+                        : 'bg-white/95 backdrop-blur-xl shadow-lg border border-slate-200/90 hover:border-[#0E468A]/50'
+                    }`}
+                  >
+                    {/* Slide Header: Name, Region, Elevation */}
+                    <div className="flex items-start justify-between gap-1.5">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="text-sm font-black text-[#082046] tracking-tight">
+                            {dest.name}
+                          </h3>
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 uppercase">
+                            {dest.category.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          {dest.region} • {dest.elevationMeters ? `${dest.elevationMeters}m MSL` : 'Sea Level'}
+                        </p>
+                      </div>
 
-            {/* Satellite / Precipitation Opacity Slider */}
-            {(activeLayer === 'satellite' || activeLayer === 'precipitation') && (
-              <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-xl">
-                <Sliders className="w-3 h-3 text-slate-500" />
-                <input
-                  type="range"
-                  min="0.2"
-                  max="1"
-                  step="0.05"
-                  value={satOpacity}
-                  onChange={(e) => setSatOpacity(parseFloat(e.target.value))}
-                  className="w-16 h-1 accent-[#0E468A] cursor-pointer"
-                  title="Layer Transparency"
-                />
-              </div>
-            )}
-          </div>
+                      {/* Warning Chip if applicable */}
+                      {dest.warningLevel !== 'green' && (
+                        <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                          dest.warningLevel === 'red' ? 'bg-rose-100 text-rose-700' :
+                          dest.warningLevel === 'orange' ? 'bg-amber-100 text-amber-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          <AlertTriangle className="w-2.5 h-2.5" />
+                          <span>Alert</span>
+                        </span>
+                      )}
+                    </div>
 
-          {/* Color Legend Bar */}
-          <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-slate-100">
-            {meta.legendColors.map((leg, idx) => (
-              <div key={idx} className="flex items-center gap-1.5 text-[10px] text-slate-700 font-bold">
-                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-xs" style={{ backgroundColor: leg.color }} />
-                <span className="truncate">{leg.label}</span>
-              </div>
-            ))}
-          </div>
+                    {/* Temperature & Weather Condition Row */}
+                    <div className="mt-2 flex items-center justify-between bg-slate-50/80 rounded-xl p-2 border border-slate-100">
+                      <div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-black text-slate-900 tracking-tight">
+                            {dest.temperature}°C
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-semibold">
+                            Feels {dest.feelsLike}°
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#0E468A] block truncate max-w-[130px]">
+                          {dest.condition}
+                        </span>
+                      </div>
 
-          {/* Official Meteorological Data Attribution */}
-          <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-100">
-            <span>India Meteorological Department • MoES</span>
-            <span className="font-semibold text-[#0E468A]">Live GIS Layer</span>
+                      {/* AQI Pill for this Location */}
+                      <div className="text-right">
+                        <div 
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-white text-[10px] font-black shadow-xs"
+                          style={{ backgroundColor: dest.aqiColor }}
+                        >
+                          <Activity className="w-3 h-3" />
+                          <span>AQI {dest.aqi}</span>
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-500 block mt-0.5">
+                          {dest.aqiCategory} (PM2.5: {dest.pm25})
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Meteorological Detail Metrics (Grid of 4) */}
+                    <div className="grid grid-cols-4 gap-1 mt-2 text-center">
+                      <div className="bg-slate-50 rounded-lg p-1">
+                        <div className="flex items-center justify-center text-sky-600 mb-0.5">
+                          <Droplets className="w-3 h-3" />
+                        </div>
+                        <span className="text-[10px] font-black text-slate-800">{dest.humidity}%</span>
+                        <span className="text-[8px] text-slate-500 block">Humidity</span>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-1">
+                        <div className="flex items-center justify-center text-teal-600 mb-0.5">
+                          <Wind className="w-3 h-3" />
+                        </div>
+                        <span className="text-[10px] font-black text-slate-800">{dest.windSpeed} km/h</span>
+                        <span className="text-[8px] text-slate-500 block">Wind</span>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-1">
+                        <div className="flex items-center justify-center text-blue-600 mb-0.5">
+                          <CloudRain className="w-3 h-3" />
+                        </div>
+                        <span className="text-[10px] font-black text-slate-800">{dest.precipitationProb}%</span>
+                        <span className="text-[8px] text-slate-500 block">Rain</span>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-1">
+                        <div className="flex items-center justify-center text-amber-600 mb-0.5">
+                          <Sun className="w-3 h-3" />
+                        </div>
+                        <span className="text-[10px] font-black text-slate-800">{dest.uvIndex}</span>
+                        <span className="text-[8px] text-slate-500 block">UV Index</span>
+                      </div>
+                    </div>
+
+                    {/* Action Button: Select and View Route Telemetry */}
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-slate-500">
+                        {dest.minTemp}° / {dest.maxTemp}°C
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectDestination(dest);
+                          setIsAdvisoryModalOpen(true);
+                        }}
+                        className="flex items-center gap-1 px-3 py-1 rounded-xl bg-[#0E468A] text-white text-[10px] font-black hover:bg-[#0A3266] transition-colors shadow-xs"
+                      >
+                        <Route className="w-3 h-3" />
+                        <span>{t('route_preview')}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* GIS Layer Telemetry Drawer */
+        <div 
+          className="absolute left-3 right-3 z-10 pointer-events-auto"
+          style={{ bottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}
+        >
+          <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-3.5 shadow-xl space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-black text-[#082046] flex items-center gap-1.5">
+                  <span>{meta.title}</span>
+                </h4>
+                <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
+                  {meta.sub}
+                </span>
+              </div>
+
+              {/* Precipitation timeline playback toggle */}
+              {activeLayer === 'precipitation' && (
+                <button
+                  onClick={() => setIsTimelinePlaying(!isTimelinePlaying)}
+                  className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs transition-all ${
+                    isTimelinePlaying ? 'bg-amber-500 text-slate-950' : 'bg-[#0E468A] text-white'
+                  }`}
+                >
+                  {isTimelinePlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                  <span>{isTimelinePlaying ? 'Pause' : 'Loop'}</span>
+                </button>
+              )}
+
+              {/* Satellite / Precipitation Opacity Slider */}
+              {(activeLayer === 'satellite' || activeLayer === 'precipitation') && (
+                <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-xl">
+                  <Sliders className="w-3 h-3 text-slate-500" />
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="1"
+                    step="0.05"
+                    value={satOpacity}
+                    onChange={(e) => setSatOpacity(parseFloat(e.target.value))}
+                    className="w-16 h-1 accent-[#0E468A] cursor-pointer"
+                    title="Layer Transparency"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Color Legend Bar */}
+            <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-slate-100">
+              {meta.legendColors.map((leg, idx) => (
+                <div key={idx} className="flex items-center gap-1.5 text-[10px] text-slate-700 font-bold">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-xs" style={{ backgroundColor: leg.color }} />
+                  <span className="truncate">{leg.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Official Meteorological Data Attribution */}
+            <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-100">
+              <span>India Meteorological Department • MoES</span>
+              <span className="font-semibold text-[#0E468A]">Live GIS Engine</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TRANSIT JOURNEY ADVISORY MODAL / SLIDE-UP SHEET */}
+      {isAdvisoryModalOpen && transitAdvisory && selectedDestination && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 max-h-[85vh] overflow-y-auto flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white/95 backdrop-blur-md px-4 py-3 border-b border-slate-100 flex items-center justify-between z-10">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#0E468A]/10 text-[#0E468A] flex items-center justify-center">
+                  <Route className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-[#082046]">
+                    {t('transit_advisory')}
+                  </h3>
+                  <span className="text-[10px] text-slate-500 font-semibold">
+                    {currentLocation.name} ➔ {selectedDestination.name}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsAdvisoryModalOpen(false)}
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-4 space-y-4 text-slate-800">
+              
+              {/* Origin vs Destination Comparison Grid */}
+              <div className="grid grid-cols-2 gap-2">
+                {/* Source Station */}
+                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200">
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 uppercase mb-1">
+                    <MapPin className="w-3 h-3 text-[#0E468A]" />
+                    <span>{t('source')}</span>
+                  </div>
+                  <h4 className="text-xs font-black text-slate-900 truncate">
+                    {currentLocation.name}
+                  </h4>
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <span className="text-lg font-black text-slate-800">
+                      {weather ? `${weather.temperature}°C` : '34°C'}
+                    </span>
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                      AQI {airQuality?.aqi || 145}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 block mt-1">
+                    {weather?.conditionText || 'Baseline Station'}
+                  </span>
+                </div>
+
+                {/* Destination Station */}
+                <div className="bg-blue-50/60 rounded-2xl p-3 border border-blue-200">
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-blue-700 uppercase mb-1">
+                    <Navigation className="w-3 h-3 text-blue-600" />
+                    <span>{t('destination')}</span>
+                  </div>
+                  <h4 className="text-xs font-black text-[#082046] truncate">
+                    {selectedDestination.name}
+                  </h4>
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <span className="text-lg font-black text-[#082046]">
+                      {selectedDestination.temperature}°C
+                    </span>
+                    <span 
+                      className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: selectedDestination.aqiColor }}
+                    >
+                      AQI {selectedDestination.aqi}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-medium text-slate-600 block mt-1 truncate">
+                    {selectedDestination.condition}
+                  </span>
+                </div>
+              </div>
+
+              {/* Transit Distance & Telemetry Highlights */}
+              <div className="grid grid-cols-4 gap-2 bg-gradient-to-br from-[#082046] to-[#0E468A] text-white rounded-2xl p-3 shadow-md">
+                <div className="text-center">
+                  <span className="text-[10px] text-slate-300 font-semibold block">{t('distance')}</span>
+                  <span className="text-sm font-black mt-0.5 block">{transitAdvisory.distanceKm} km</span>
+                </div>
+                <div className="text-center border-l border-white/20">
+                  <span className="text-[10px] text-slate-300 font-semibold block">{t('travel_time')}</span>
+                  <span className="text-sm font-black mt-0.5 block">~{transitAdvisory.estimatedHours}h</span>
+                </div>
+                <div className="text-center border-l border-white/20">
+                  <span className="text-[10px] text-slate-300 font-semibold block">{t('temp_delta')}</span>
+                  <span className={`text-sm font-black mt-0.5 block ${transitAdvisory.tempDelta < 0 ? 'text-sky-300' : 'text-amber-300'}`}>
+                    {transitAdvisory.tempDelta > 0 ? `+${transitAdvisory.tempDelta}` : transitAdvisory.tempDelta}°C
+                  </span>
+                </div>
+                <div className="text-center border-l border-white/20">
+                  <span className="text-[10px] text-slate-300 font-semibold block">{t('aqi_shift')}</span>
+                  <span className={`text-sm font-black mt-0.5 block ${transitAdvisory.aqiDelta < 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                    {transitAdvisory.aqiDelta < 0 ? `${transitAdvisory.aqiDelta}` : `+${transitAdvisory.aqiDelta}`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actionable Packing & Clothing Recommendation */}
+              <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/90 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-black text-[#082046]">
+                  <Shirt className="w-4 h-4 text-[#0E468A]" />
+                  <span>{t('travel_recommendation')}</span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  {transitAdvisory.clothingAdvice}
+                </p>
+                <p className="text-[11px] text-slate-500 font-medium italic pt-1 border-t border-slate-200">
+                  {transitAdvisory.climateShift}
+                </p>
+              </div>
+
+              {/* Road & Transit Conditions */}
+              <div className="bg-amber-50/70 rounded-2xl p-3.5 border border-amber-200/80 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-black text-amber-900">
+                  <Car className="w-4 h-4 text-amber-700" />
+                  <span>{t('road_conditions')}</span>
+                </div>
+                <p className="text-xs text-amber-950 leading-relaxed">
+                  {transitAdvisory.roadAdvisory}
+                </p>
+                <div className="flex items-center gap-1 text-[10px] font-bold text-amber-800 pt-1">
+                  <Clock className="w-3 h-3 text-amber-700" />
+                  <span>Best departure window: {transitAdvisory.bestTravelWindow}</span>
+                </div>
+              </div>
+
+              {/* Destination Air Quality & Health Advisory */}
+              <div className="bg-emerald-50/70 rounded-2xl p-3.5 border border-emerald-200/80 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-emerald-950">
+                    <HeartPulse className="w-4 h-4 text-emerald-700" />
+                    <span>Air Quality Health Impact</span>
+                  </div>
+                  <span 
+                    className="text-[10px] font-black text-white px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: selectedDestination.aqiColor }}
+                  >
+                    AQI {selectedDestination.aqi} • {selectedDestination.aqiCategory}
+                  </span>
+                </div>
+                <p className="text-xs text-emerald-900 leading-relaxed">
+                  {transitAdvisory.healthAdvisory}
+                </p>
+                <div className="text-[10px] text-emerald-800 flex items-center justify-between pt-1 border-t border-emerald-200/60 font-semibold">
+                  <span>PM2.5: {selectedDestination.pm25} µg/m³</span>
+                  <span>PM10: {selectedDestination.pm10} µg/m³</span>
+                  <span>CPCB Air Standard</span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer CTA */}
+            <div className="sticky bottom-0 bg-white px-4 py-3 border-t border-slate-100 flex items-center gap-2">
+              <button
+                onClick={() => setIsAdvisoryModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl bg-[#0E468A] text-white text-xs font-black shadow-md hover:bg-[#0A3266] transition-colors text-center"
+              >
+                {t('view_on_map')}
+              </button>
+              <button
+                onClick={handleClearRoute}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </MobileContainer>
   );
 };

@@ -1,4 +1,6 @@
 import { AirQualityData, CurrentWeather, DailyForecast, HourlyForecast, MarineData, SavedLocation } from '../types';
+import { fetchGovAirQuality, fetchGovMarineData } from './indianGovApiService';
+import { generateOffline10DayForecast, enrichForecastWithImdIntelligence } from './offlineForecastEngine';
 
 // Map WMO weather codes to human-readable strings and icons
 export const getWeatherCodeInfo = (code: number, isDay: boolean = true) => {
@@ -116,87 +118,135 @@ export const DISCOVER_LOCATIONS_CATALOG: DiscoverLocationItem[] = [
 /**
  * Fetch Open-Meteo weather data
  */
-export async function fetchWeatherData(lat: number, lon: number): Promise<{
+export async function fetchWeatherData(
+  lat: number,
+  lon: number,
+  options?: {
+    cityName?: string;
+    stateName?: string;
+    forceOffline?: boolean;
+  }
+): Promise<{
   current: CurrentWeather;
   hourly: HourlyForecast[];
   daily: DailyForecast[];
 }> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,uv_index,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max&timezone=auto&forecast_days=10`;
+  // If forceOffline is requested, immediately synthesize from IMD & CPCB datasets
+  if (options?.forceOffline) {
+    return generateOffline10DayForecast({
+      lat,
+      lon,
+      locationName: options?.cityName,
+      stateName: options?.stateName,
+    });
+  }
 
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Weather API error: ${res.statusText}`);
-  const data = await res.json();
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3500);
 
-  const isDay = Boolean(data.current.is_day);
-  const codeInfo = getWeatherCodeInfo(data.current.weather_code, isDay);
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,uv_index,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max&timezone=auto&forecast_days=10`;
 
-  const current: CurrentWeather = {
-    temperature: Math.round(data.current.temperature_2m),
-    feelsLike: Math.round(data.current.apparent_temperature),
-    humidity: data.current.relative_humidity_2m,
-    windSpeed: Math.round(data.current.wind_speed_10m),
-    windDirection: data.current.wind_direction_10m,
-    windGusts: Math.round(data.current.wind_gusts_10m || 0),
-    uvIndex: Math.round(data.hourly.uv_index[0] || 3),
-    weatherCode: data.current.weather_code,
-    conditionText: codeInfo.text,
-    isDay,
-    pressure: Math.round(data.current.surface_pressure),
-    dewPoint: Math.round(data.current.temperature_2m - ((100 - data.current.relative_humidity_2m) / 5)),
-    precipitation: data.current.precipitation,
-    timestamp: data.current.time,
-  };
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
 
-  // 24-48 hours
-  const hourly: HourlyForecast[] = data.hourly.time.slice(0, 36).map((timeStr: string, idx: number) => {
-    const date = new Date(timeStr);
-    const hours = date.getHours();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const formattedHour = `${hours % 12 || 12} ${ampm}`;
-    const code = data.hourly.weather_code[idx];
+    if (!res.ok) throw new Error(`Weather API error: ${res.statusText}`);
+    const data = await res.json();
 
-    return {
-      time: timeStr,
-      formattedTime: idx === 0 ? 'Now' : formattedHour,
-      temperature: Math.round(data.hourly.temperature_2m[idx]),
-      precipitationProbability: Math.round(data.hourly.precipitation_probability[idx] || 0),
-      precipitationMm: data.hourly.precipitation[idx] || 0,
-      weatherCode: code,
-      conditionText: getWeatherCodeInfo(code, hours >= 6 && hours < 19).text,
-      uvIndex: Math.round(data.hourly.uv_index[idx] || 0),
-      windSpeed: Math.round(data.hourly.wind_speed_10m[idx] || 0),
+    const isDay = Boolean(data.current.is_day);
+    const codeInfo = getWeatherCodeInfo(data.current.weather_code, isDay);
+
+    const current: CurrentWeather = {
+      temperature: Math.round(data.current.temperature_2m),
+      feelsLike: Math.round(data.current.apparent_temperature),
+      humidity: data.current.relative_humidity_2m,
+      windSpeed: Math.round(data.current.wind_speed_10m),
+      windDirection: data.current.wind_direction_10m,
+      windGusts: Math.round(data.current.wind_gusts_10m || 0),
+      uvIndex: Math.round(data.hourly.uv_index[0] || 3),
+      weatherCode: data.current.weather_code,
+      conditionText: codeInfo.text,
+      isDay,
+      pressure: Math.round(data.current.surface_pressure),
+      dewPoint: Math.round(data.current.temperature_2m - ((100 - data.current.relative_humidity_2m) / 5)),
+      precipitation: data.current.precipitation,
+      timestamp: data.current.time,
     };
-  });
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const daily: DailyForecast[] = data.daily.time.map((dateStr: string, idx: number) => {
-    const date = new Date(dateStr);
-    const dayName = idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : dayNames[date.getDay()];
-    const code = data.daily.weather_code[idx];
+    // 24-48 hours
+    const hourly: HourlyForecast[] = data.hourly.time.slice(0, 36).map((timeStr: string, idx: number) => {
+      const date = new Date(timeStr);
+      const hours = date.getHours();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const formattedHour = `${hours % 12 || 12} ${ampm}`;
+      const code = data.hourly.weather_code[idx];
 
-    return {
-      date: dateStr,
-      dayName,
-      maxTemp: Math.round(data.daily.temperature_2m_max[idx]),
-      minTemp: Math.round(data.daily.temperature_2m_min[idx]),
-      precipitationProbability: Math.round(data.daily.precipitation_probability_max[idx] || 0),
-      precipitationMm: data.daily.precipitation_sum[idx] || 0,
-      weatherCode: code,
-      conditionText: getWeatherCodeInfo(code, true).text,
-      uvIndexMax: Math.round(data.daily.uv_index_max[idx] || 5),
-      sunrise: data.daily.sunrise[idx] ? data.daily.sunrise[idx].split('T')[1] : '06:00',
-      sunset: data.daily.sunset[idx] ? data.daily.sunset[idx].split('T')[1] : '18:30',
-      aiInsight: idx === 0 ? 'Ideal morning conditions with mild breeze.' : idx === 2 ? 'Scattered showers expected in the afternoon.' : undefined,
-    };
-  });
+      return {
+        time: timeStr,
+        formattedTime: idx === 0 ? 'Now' : formattedHour,
+        temperature: Math.round(data.hourly.temperature_2m[idx]),
+        precipitationProbability: Math.round(data.hourly.precipitation_probability[idx] || 0),
+        precipitationMm: data.hourly.precipitation[idx] || 0,
+        weatherCode: code,
+        conditionText: getWeatherCodeInfo(code, hours >= 6 && hours < 19).text,
+        uvIndex: Math.round(data.hourly.uv_index[idx] || 0),
+        windSpeed: Math.round(data.hourly.wind_speed_10m[idx] || 0),
+      };
+    });
 
-  return { current, hourly, daily };
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const rawDaily: DailyForecast[] = data.daily.time.map((dateStr: string, idx: number) => {
+      const date = new Date(dateStr);
+      const dayName = idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : dayNames[date.getDay()];
+      const code = data.daily.weather_code[idx];
+
+      return {
+        date: dateStr,
+        dayName,
+        maxTemp: Math.round(data.daily.temperature_2m_max[idx]),
+        minTemp: Math.round(data.daily.temperature_2m_min[idx]),
+        precipitationProbability: Math.round(data.daily.precipitation_probability_max[idx] || 0),
+        precipitationMm: data.daily.precipitation_sum[idx] || 0,
+        weatherCode: code,
+        conditionText: getWeatherCodeInfo(code, true).text,
+        uvIndexMax: Math.round(data.daily.uv_index_max[idx] || 5),
+        sunrise: data.daily.sunrise[idx] ? data.daily.sunrise[idx].split('T')[1] : '06:00',
+        sunset: data.daily.sunset[idx] ? data.daily.sunset[idx].split('T')[1] : '18:30',
+        aiInsight: idx === 0 ? 'Ideal morning conditions with mild breeze.' : idx === 2 ? 'Scattered showers expected in the afternoon.' : undefined,
+      };
+    });
+
+    // Enrich all 10 days with deep Indian Government Dataset Intelligence
+    const daily = enrichForecastWithImdIntelligence(rawDaily, {
+      lat,
+      lon,
+      stateName: options?.stateName,
+    });
+
+    return { current, hourly, daily };
+  } catch (_netErr) {
+    console.warn('[WeatherService] Network unreachable. Generating 100% Offline 10-day forecast from IMD datasets...');
+    return generateOffline10DayForecast({
+      lat,
+      lon,
+      locationName: options?.cityName,
+      stateName: options?.stateName,
+    });
+  }
 }
 
 /**
  * Fetch Air Quality & Pollutants (CPCB / Open-Meteo Air Quality API)
  */
-export async function fetchAirQualityData(lat: number, lon: number): Promise<AirQualityData> {
+export async function fetchAirQualityData(lat: number, lon: number, cityName?: string): Promise<AirQualityData> {
+  // 1. Try Official Indian Government CAAQMS / data.gov.in Feed
+  try {
+    const govAqi = await fetchGovAirQuality(cityName || 'Delhi');
+    if (govAqi) return govAqi;
+  } catch {
+    // Continue to subcontinental grid
+  }
+
   try {
     const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi,us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,alder_pollen,birch_pollen,grass_pollen`;
     const res = await fetch(url);
@@ -241,6 +291,14 @@ export async function fetchAirQualityData(lat: number, lon: number): Promise<Air
  * Fetch Marine & Coastal Data (INCOIS / Open-Meteo Marine)
  */
 export async function fetchMarineData(lat: number, lon: number): Promise<MarineData> {
+  // 1. Try Official INCOIS Ocean State Forecast Proxy
+  try {
+    const govMarine = await fetchGovMarineData(lat, lon);
+    if (govMarine) return govMarine;
+  } catch {
+    // Continue to secondary marine telemetry
+  }
+
   try {
     const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,wave_direction,wave_period`;
     const res = await fetch(url);

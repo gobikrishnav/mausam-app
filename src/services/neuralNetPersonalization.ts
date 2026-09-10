@@ -66,36 +66,53 @@ function sigmoidDerivative(sigVal: number): number {
   return sigVal * (1 - sigVal);
 }
 
-// Initial Synaptic Weights learned from meteorological domain datasets
-const DEFAULT_W1: number[][] = [
-  [ 0.8, -0.4,  0.9, -0.7, -0.2, -0.5, -0.3, -0.2], // Temp
-  [-0.3, -0.2,  0.8, -0.4, -0.6, -0.3, -0.2, -0.5], // Humidity
-  [-0.9, -0.8, -0.6, -0.4, -0.9, -0.8, -0.7, -0.9], // Rain Prob
-  [-0.8, -0.9, -0.5, -0.3, -0.9, -0.8, -0.6, -0.8], // Rain Amount
-  [-0.4, -0.5, -0.8, -0.3, -0.7, -0.6, -0.5, -0.7], // Wind
-  [-0.7, -0.3, -0.4, -0.9, -0.2, -0.4, -0.6, -0.3], // Thom's DI
-  [-0.9, -0.4, -0.3, -0.95, -0.3, -0.4, -0.8, -0.3], // AQI
-  [-0.6, -0.2, -0.3, -0.5,  0.8, -0.4, -0.7, -0.4], // UV Index
-  [ 0.5,  0.8,  0.6,  0.2,  0.7,  0.5,  0.6,  0.7], // Diurnal
-  [-0.1, -0.1, -0.2, -0.1, -0.9, -0.6, -0.3, -0.2], // Marine
-  [-0.2, -0.3, -0.4, -0.3, -0.5, -0.4, -0.3, -0.4], // Pressure
-  [ 0.7,  0.7,  0.7,  0.7,  0.7,  0.7,  0.7,  0.7], // Affinity
-];
+// ── Load trained MLP weights from dataset-trained JSON ──────────────────────
+import trainedWeightsJson from '../data/trainedModelWeights.json';
 
-const DEFAULT_B1: number[] = [0.1, 0.1, 0.2, 0.1, 0.05, 0.1, 0.1, 0.05];
+const _mlp = (trainedWeightsJson as any).neuralNetwork;
 
-const DEFAULT_W2: number[][] = [
-  [ 0.95, -0.2,  -0.1, -0.3,   0.2,  -0.1,  -0.2,   0.1],
-  [-0.1,   0.9,  -0.1, -0.2,  -0.2,   0.4,   0.3,  -0.1],
-  [-0.2,  -0.2,   0.95, -0.1, -0.4,  -0.3,  -0.1,  -0.3],
-  [-0.3,  -0.1,  -0.1,  0.95, -0.2,  -0.2,   0.3,  -0.1],
-  [ 0.1,  -0.2,  -0.3, -0.2,   0.95,  0.3,  -0.2,   0.4],
-  [-0.1,   0.3,  -0.2, -0.2,   0.2,   0.9,   0.2,   0.3],
-  [-0.2,   0.2,  -0.1,  0.3,  -0.2,   0.2,   0.9,   0.1],
-  [ 0.1,  -0.1,  -0.3, -0.1,   0.3,   0.3,   0.1,   0.9],
-];
+// Prefer real trained weights from Python training pipeline; fall back to domain-calibrated defaults
+const DEFAULT_W1: number[][] = (
+  _mlp?.W1?.length === 12 ? _mlp.W1 :
+  [
+    [ 0.8, -0.4,  0.9, -0.7, -0.2, -0.5, -0.3, -0.2], // Temp
+    [-0.3, -0.2,  0.8, -0.4, -0.6, -0.3, -0.2, -0.5], // Humidity
+    [-0.9, -0.8, -0.6, -0.4, -0.9, -0.8, -0.7, -0.9], // Rain Prob
+    [-0.8, -0.9, -0.5, -0.3, -0.9, -0.8, -0.6, -0.8], // Rain Amount
+    [-0.4, -0.5, -0.8, -0.3, -0.7, -0.6, -0.5, -0.7], // Wind
+    [-0.7, -0.3, -0.4, -0.9, -0.2, -0.4, -0.6, -0.3], // Thom DI
+    [-0.9, -0.4, -0.3, -0.95,-0.3, -0.4, -0.8, -0.3], // AQI
+    [-0.6, -0.2, -0.3, -0.5,  0.8, -0.4, -0.7, -0.4], // UV
+    [ 0.5,  0.8,  0.6,  0.2,  0.7,  0.5,  0.6,  0.7], // Diurnal
+    [-0.1, -0.1, -0.2, -0.1, -0.9, -0.6, -0.3, -0.2], // Marine
+    [-0.2, -0.3, -0.4, -0.3, -0.5, -0.4, -0.3, -0.4], // Pressure
+    [ 0.7,  0.7,  0.7,  0.7,  0.7,  0.7,  0.7,  0.7], // Affinity
+  ]
+);
 
-const DEFAULT_B2: number[] = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1];
+const DEFAULT_B1: number[] = (
+  _mlp?.b1?.length === 8 ? _mlp.b1 :
+  [0.1, 0.1, 0.2, 0.1, 0.05, 0.1, 0.1, 0.05]
+);
+
+const DEFAULT_W2: number[][] = (
+  _mlp?.W2?.length === 8 ? _mlp.W2 :
+  [
+    [ 0.95, -0.2,  -0.1, -0.3,   0.2,  -0.1,  -0.2,   0.1],
+    [-0.1,   0.9,  -0.1, -0.2,  -0.2,   0.4,   0.3,  -0.1],
+    [-0.2,  -0.2,   0.95, -0.1, -0.4,  -0.3,  -0.1,  -0.3],
+    [-0.3,  -0.1,  -0.1,  0.95, -0.2,  -0.2,   0.3,  -0.1],
+    [ 0.1,  -0.2,  -0.3, -0.2,   0.95,  0.3,  -0.2,   0.4],
+    [-0.1,   0.3,  -0.2, -0.2,   0.2,   0.9,   0.2,   0.3],
+    [-0.2,   0.2,  -0.1,  0.3,  -0.2,   0.2,   0.9,   0.1],
+    [ 0.1,  -0.1,  -0.3, -0.1,   0.3,   0.3,   0.1,   0.9],
+  ]
+);
+
+const DEFAULT_B2: number[] = (
+  _mlp?.b2?.length === 8 ? _mlp.b2 :
+  [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+);
 
 export class MausamNeuralNetwork {
   private static instance: MausamNeuralNetwork | null = null;
@@ -110,9 +127,10 @@ export class MausamNeuralNetwork {
 
   public learningRate: number = 0.08;
   public momentum: number = 0.85;
-  public epochCount: number = 142;
-  public totalTrainingSteps: number = 142;
-  public lastMseLoss: number = 0.024;
+  // Start from real trained epoch count from run_training.py
+  public epochCount: number = (_mlp?.epochCount as number) ?? 142;
+  public totalTrainingSteps: number = (_mlp?.totalTrainingSteps as number) ?? 142;
+  public lastMseLoss: number = (_mlp?.lastMseLoss as number) ?? 0.016;
 
   private constructor() {
     this.W1 = DEFAULT_W1.map(row => [...row]);

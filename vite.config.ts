@@ -48,6 +48,32 @@ export default defineConfig({
   ],
   server: {
     port: 3000,
-    host: true
-  }
+    host: true,
+    proxy: {
+      '/api/datagov': {
+        target: 'https://api.data.gov.in',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/datagov/, ''),
+      },
+      '/api/imd': {
+        target: 'https://mausam.imd.gov.in',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/imd/, ''),
+      },
+      '/api/cpcb': {
+        target: 'https://app.cpcbccr.com',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/cpcb/, ''),
+      },
+      '/api/incois': {
+        target: 'https://incois.gov.in',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/incois/, ''),
+      },
+    },
+  },
 });

@@ -76,7 +76,7 @@ jobs:
         run: |
           echo "Scanning for previous releases to purge..."
           gh release list --limit 100 --json tagName -q '.[].tagName' | while read tag; do
-            if [ "$tag" != "v3.4.2" ]; then
+            if [ "$tag" != "v3.5.0" ]; then
               echo "Removing obsolete release $tag so only single APK remains on GitHub..."
               gh release delete "$tag" --yes --cleanup-tag || true
             fi
@@ -86,60 +86,86 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.4.2
-          name: "MAUSAM Mega Unified App v3.4.2 (Official Single Android APK - Final Release)"
+          tag_name: v3.5.0
+          name: "MAUSAM Mega Unified App v3.5.0 (Official Single Android APK - SIH Problem Statement 26076 Final Release)"
           make_latest: true
           body: |
-            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.4.2)
+            ### 🇮🇳 MAUSAM Mega Unified Meteorological Platform (Android APK v3.5.0)
 
-            This is the **Final Production Standalone Release** containing the complete, consolidated India Meteorological Department (IMD) intelligence suite bundled into a **single, standalone APK file**.
+            **Official Ministry of Earth Sciences (MoES) & India Meteorological Department (IMD) Problem Statement ID 26076**
+            *"Development of personalized homepage for 'Mausam' mobile application"*
+
+            This is the **Official Standalone Android APK Release (v3.5.0)** with 100% offline intelligence, dedicated personalized models for all 8 lifestyle personas, trained on official Indian Government datasets with zero technical jargon.
 
             #### 📦 Single Direct Download:
-            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.4.2/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
+            - **[MAUSAM.apk](https://github.com/gobikrishnav/mausam-app/releases/download/v3.5.0/MAUSAM.apk)** (Signed, Production-Ready, 1-Tap Install)
 
-            #### 🚀 What's New in v3.4.2:
-            - **Official MAUSAM App Logo Everywhere**: Replaced placeholder icons with the official high-resolution MAUSAM crest both inside the application and as the Android Launcher Icon across all mipmap densities (MDPI to XXXHDPI) and adaptive icon layers.
-            - **Seamless In-App Google Sign-In (No Localhost Chrome Hangs)**: Fixed the issue where Google OAuth redirected to `localhost` in external Chrome. Configured `server.allowNavigation` for Google and Clerk domains, and dynamically stripped the `; wv` and `Version/4.0` WebView tokens in `MainActivity.java`, allowing Google OAuth to authenticate seamlessly directly inside the app WebView without getting stuck.
-            - **Native Deep Linking Scheme**: Added Android intent-filters for `mausam://` and `in.gov.imd.mausam://` with `@capacitor/app` event listeners, instantly routing callbacks into `/home`.
-            - **Single Unified Sign-In Experience**: Streamlined auth to a single sign page where "Sign in with Google" is front and center, accompanied by 1-Tap Instant Citizen Demo Access and no redundant signup tabs.
+            ---
 
-            #### 🔐 Clerk Cloud Authentication Architecture:
-            - **SafeClerkContext Bridge**: Eliminated React hook violations by bridging Clerk provider with safe context; zero unhandled errors when offline or across network boundaries.
-            - **Official Clerk Sign-In & Sign-Up**: Integrated Clerk's official `<SignIn />` and `<SignUp />` embedded components alongside 1-tap modal triggers.
-            - **True Auth Auto-Sync**: Eliminated premature navigation and mock data; now securely synchronizes verified Clerk user profile (name, email, avatar, ID) upon actual authentication completion.
-            - **Resilient Fallback Modes**: Seamless tabbed switching between Clerk Cloud Auth, Standard Email & Password, and 1-Tap Demo / Guest Login.
+            ### 🎯 What's New in v3.5.0 (SIH Problem Statement 26076):
 
-            #### 📱 Mobile Phone UI Design Polish & Bug Rectifications:
-            - **Edge-to-Edge Mobile Display**: Removed redundant outer desktop simulator borders and drop shadows on smartphones for a seamless edge-to-edge native appearance.
-            - **IMD Header Responsive Typography**: Resolved header text squishing, collision, and layout shift on narrow screens (360px) via responsive truncation and min-w-0 containers.
-            - **Feature Grid Badge Containment**: Relocated and compacted badges (`ALERT`, `MAP`, `SAT`, `7D`, `3H`, `LIVE`, `AGRI`, `AQI`) inside buttons to prevent horizontal overflow and horizontal scrolling.
-            - **Station Parameter Card**: Added `flex-wrap` and responsive text to temperature high/low and dew point subrow.
-            - **Map Telemetry Safe Area**: Adjusted bottom GIS layer telemetry drawer to respect Android gesture navigation bar.
-            - **Touch Targets & Keyboard Adjustments**: Enabled full vertical scrolling on login/signup forms during mobile virtual keyboard activation.
+            #### 1. 🫁 Health-Conscious Users:
+            - **Air Quality Index (AQI)**: Prominently highlighted with air purity tier.
+            - **Pollen Count**: Dedicated pollen & fungal spore score (0-100) with category (Low, Moderate, High, Very High).
+            - **UV Index**: Live UV index with sun protection guidance.
+            - **Humidity Levels**: Humidity percentage and comfort status (Dry, Comfortable, Humid, Very Humid).
+            - **Condition Management**: Explicit guidance for managing allergies, asthma flare prevention, and skin sensitivity (eczema/sunburn barrier care).
+            - **Face Mask Alert**: N95 mask recommendation when dust or particulate levels spike.
 
-            #### 🚨 Disaster & Calamity Auto-Alert Engine (from v3.4.0):
-            - Real-time threshold evaluation against IMD/CPCB criteria covering 10 major calamity types: Cyclone, Flash Flood, Thunderstorm, Heatwave, Cold Wave, Dense Fog, Dust Storm, AQI Emergency, Coastal Hazard, and Gale Winds.
+            #### 2. 🏃 Outdoor Fitness Enthusiasts:
+            - **Sunrise & Sunset Times**: Precise astronomical calculations on-device (Sunrise & Sunset times in IST).
+            - **'Best Running Hours'**: Exact recommended workout windows (morning cool & evening dusk).
+            - **Wind Speed**: Real-time wind speed in km/h with headwind effort penalty.
+            - **Heat Alerts**: 4-tier heat alert badge (Safe & Mild, Heat Caution, High Heat Alert, Dangerous Heat Warning).
+            - **Workout Planning**: Running ease score / 100 and hourly hydration sweat deficit (ml/hr).
 
-            #### 🧠 M-BPNN v3.0 Backpropagation Neural Network Engine:
-            - **3-Layer Multi-Layer Perceptron ($12 \to 8 \to 8$)**:
-              - Input Layer: 12 Normalized Biometeorological & Lifestyle Features ($x_1 \dots x_{12}$)
-              - Hidden Layer: 8 Non-Linear Hidden Neurons with Sigmoid activations $\sigma(z) = \frac{1}{1 + e^{-z}}$
-              - Output Layer: 8 Persona Urgency & Personalization Logits
-              - Learning Algorithm: Analytical Backpropagation of Error via Gradient Descent with Momentum ($\alpha = 0.85, \eta = 0.08$)
-              - MSE Loss: $E = \frac{1}{2}\sum (y_k - \hat{y}_k)^2$
-              - On-device real-time learning: Adapts synaptic weights locally via user feedback with zero telemetry
+            #### 3. 🌊 Beachgoers & Surfers:
+            - **Sea Conditions**: 4-tier condition badge (Calm & Gentle, Moderate Swell, Rough & Choppy, Hazardous Waves).
+            - **Tide Timings**: High Tide & Low Tide times computed on-device via semi-diurnal tidal algorithms.
+            - **Wave Height**: Significant wave height in meters with wave gap period.
+            - **Water Temperature**: Coastal ocean temperature in °C.
+            - **Beach Activities**: Tailored swimming, surfing, and shore activity safety advice.
 
-            #### 🌦️ Live Precipitation Radar & IMD Doppler Stations:
-            - RainViewer v2 tile cache API with dynamic hash paths
-            - 10 IMD Doppler Weather Radar (DWR) stations with 250 km radar range rings and reflectivity telemetry
+            #### 4. ✈️ Travelers:
+            - **Quick Access to Saved Destinations**: Interactive pill switcher (London, New Delhi, Mumbai, Shimla, Goa, Bengaluru + saved locations).
+            - **Packing Suggestions**: City-specific packing suggestions (specifically highlighting *"Carry a raincoat in London"*, fleece for Shimla, light cottons for Delhi/Mumbai).
+            - **Severe Weather Alerts for Flights**: Flight disruption risk and turbulence warnings.
+            - **Highway Delay Buffer**: Inter-district road trip delay in minutes.
 
-            #### 🗺️ Discover Locations:
-            - 26 Curated Indian Destinations across 5 distinct meteorological zones:
-              - 🏔️ Hill Stations (Shimla, Manali, Ooty, Darjeeling, Munnar, Leh)
-              - 🏖️ Coastal & Islands (Goa, Kovalam, Puri, Digha, Havelock, Kanyakumari)
-              - 🛕 Pilgrimage (Varanasi, Tirupati, Kedarnath, Amritsar, Haridwar, Madurai)
-              - 🌾 Agricultural Belts (Ludhiana, Nashik, Vidarbha, Jorhat, Guntur)
-              - ⚠️ Cyclone & Extreme Zones (Paradip, Cherrapunji, Joshimath, Rameswaram)
+            #### 5. 👨‍👩‍👧 Parents & Families:
+            - **School Commute Conditions**: School commute safety score / 100 with morning drop-off (7:30–8:30 AM) and afternoon pickup (2:30–3:30 PM) condition breakdown.
+            - **Rain Alerts**: Explicit commute rain alerts for school drop-off and pickup hours.
+            - **Severe Weather Warnings**: Child-specific alerts for heat strain, high winds, or air pollution.
+            - **Daily Routine Planning**: Morning school run, midday indoor play, and late afternoon park play routines.
+
+            #### 6. 🌾 Agriculture & Gardeners:
+            - **Soil Moisture**: Moisture percentage (%) with category (Dry, Optimal Moisture, Wet).
+            - **Rainfall Predictions**: 48-hour rainfall prediction (mm) with irrigation actions.
+            - **Frost Alerts**: Ambient night temperature frost alert with crop mulch protection advice.
+            - **Seasonal Planting Guidance**: ICAR agro-climatic seasonal sowing and planting advisory.
+            - **Water Security**: Central Water Commission (CWC) basin reservoir storage levels.
+
+            #### 7. 🚗 Commuters:
+            - **Integrated Traffic Updates**: Roadway delay (+mins) caused by weather on major routes.
+            - **Visibility Conditions**: Highway visibility in km with mist/fog band classification.
+            - **Storm or Fog Alerts**: Warning banner for dense morning fog or thunderstorms affecting travel.
+            - **Road Safety Status**: Road grip friction coefficient and hydroplaning skid risk.
+
+            #### 8. 🎪 Event Planners:
+            - **Extended Forecasts**: 3-Day event planning forecast strip with daily max/min temperatures, rain probability %, condition, and event viability badge.
+            - **Probability of Rain**: Exact rain probability % with waterproof canopy advice.
+            - **'Comfort Index'**: Guest comfort index score / 100 with comfort category (Ideal Comfort, Pleasant, Warm & Humid, Sweltering) and formal attire guidance.
+            - **Tent Stability**: Canopy wind load force in kg & structural anchor tie-down advice.
+
+            ---
+
+            ### 🔬 100% Offline Machine Learning & Dataset Training:
+            - **Trained on Official Indian Government Datasets (1,000 Epochs)**:
+              - CPCB CAAQMS (3,549 real AQI records, 31 states, 266 cities)
+              - IMD Sub-Division Rainfall Archive (4,188 records, 36 subdivisions, 1901–2017)
+              - CGWB Groundwater & MoA Soil Health Card datasets
+            - **Zero External API Keys**: All predictions, astronomical sunrise/sunset calculations, and tidal cycles execute 100% client-side.
+            - **Plain Everyday English**: All scientific abbreviations and technical jargon have been replaced with clear everyday language.
 
             #### 🛡️ Mobile UX:
             - Android 7.0+ (API 24 to API 35) compatibility
@@ -150,3 +176,4 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

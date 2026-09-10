@@ -44,6 +44,7 @@ interface AppState {
   daily: DailyForecast[];
   airQuality: AirQualityData | null;
   marine: MarineData | null;
+  forecastMode: 'live' | 'offline_imd';
   isLoadingWeather: boolean;
   weatherError: string | null;
   lastUpdated: string | null;
@@ -76,6 +77,7 @@ interface AppState {
   setLiveGpsEnabled: (enabled: boolean) => void;
   setTutorialCompleted: (val: boolean) => void;
   refreshWeather: () => Promise<void>;
+  setForecastMode: (mode: 'live' | 'offline_imd') => void;
   addCustomAlert: (rule: Omit<CustomAlertRule, 'id'>) => void;
   toggleCustomAlert: (id: string) => void;
   deleteCustomAlert: (id: string) => void;
@@ -120,6 +122,7 @@ export const useAppStore = create<AppState>()(
       daily: [],
       airQuality: null,
       marine: null,
+      forecastMode: 'live',
       isLoadingWeather: false,
       weatherError: null,
       lastUpdated: null,
@@ -211,14 +214,24 @@ export const useAppStore = create<AppState>()(
       setLiveGpsEnabled: (enabled) => set({ liveGpsEnabled: enabled }),
       setTutorialCompleted: (val) => set({ hasCompletedTutorial: val }),
 
+      setForecastMode: (mode: 'live' | 'offline_imd') => {
+        set({ forecastMode: mode });
+        get().refreshWeather();
+      },
+
       refreshWeather: async () => {
-        const { currentLocation, dismissedAlertIds } = get();
+        const { currentLocation, dismissedAlertIds, forecastMode } = get();
         set({ isLoadingWeather: true, weatherError: null });
 
         try {
+          const isForceOffline = forecastMode === 'offline_imd';
           const [weatherRes, aqiRes, marineRes] = await Promise.all([
-            fetchWeatherData(currentLocation.latitude, currentLocation.longitude),
-            fetchAirQualityData(currentLocation.latitude, currentLocation.longitude),
+            fetchWeatherData(currentLocation.latitude, currentLocation.longitude, {
+              cityName: currentLocation.name,
+              stateName: currentLocation.region,
+              forceOffline: isForceOffline,
+            }),
+            fetchAirQualityData(currentLocation.latitude, currentLocation.longitude, currentLocation.name),
             fetchMarineData(currentLocation.latitude, currentLocation.longitude),
           ]);
 

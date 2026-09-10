@@ -2,22 +2,24 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, CalendarDays, Map, Bell, Sparkles } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export const BottomNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const unreadAlertsCount = useAppStore(state => state.unreadAlertsCount);
+  const { t } = useTranslation();
 
   // Hidden on onboarding, splash, and auth screens
   const isHidden = ['/splash', '/onboarding', '/auth', '/login', '/signup', '/forgot-password'].some(p => location.pathname.startsWith(p));
   if (isHidden) return null;
 
   const tabs = [
-    { label: 'Home', path: '/home', icon: Home },
-    { label: 'Live Map', path: '/map', icon: Map },
-    { label: 'Ask AI', path: '/assistant', icon: Sparkles, isFab: true },
-    { label: 'Forecast', path: '/forecast', icon: CalendarDays },
-    { label: 'Warnings', path: '/alerts', icon: Bell, badge: unreadAlertsCount },
+    { label: t('nav_home', 'Home'), path: '/home', icon: Home },
+    { label: t('nav_map', 'Live Map'), path: '/map', icon: Map },
+    { label: t('nav_ask_ai', 'Ask AI'), path: '/assistant', icon: Sparkles, isFab: true },
+    { label: t('nav_forecast', 'Forecast'), path: '/forecast', icon: CalendarDays },
+    { label: t('nav_warnings', 'Warnings'), path: '/alerts', icon: Bell, badge: unreadAlertsCount },
   ];
 
   return (

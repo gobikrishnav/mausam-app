@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2026-09-10T15:13:25.616367+00:00",
+  "trainingEngine": "MAUSAM Ground-Truth ML Engine (1000 Epochs)",
+  "totalRecords": 7780,
+  "totalSubdivisions": 36,
+  "datasets": {
+    "imd_subdivisional_rainfall": {
+      "records": 4188,
+      "subdivisions": 36,
+      "years": "1901-2017 (116 years)",
+      "allIndiaAnnualMeanMm": 1400.7,
+      "allIndiaMonsoonMeanMm": 1061.3
+    },
+    "cpcb_caaqms": {
+      "records": 3549,
+      "states": 31,
+      "cities": 266
+    },
+    "imd_gridded": {
+      "files": 11,
+      "totalMB": 267.0,
+      "grandMeanMmDay": 3.21
+    }
+  },
+  "modelMetrics": {
+    "healthAccuracy": 0.9744,
+    "fitnessR2": 0.9999,
+    "farmerR2": 0.9959,
+    "travelerR2": 0.9951,
+    "commuterR2": 0.7998,
+    "beachgoerAccuracy": 0.929,
+    "parentAccuracy": 0.9487,
+    "eventPlannerR2": 0.9747,
+    "neuralNetFinalLoss": 0.00723
+  }
+}

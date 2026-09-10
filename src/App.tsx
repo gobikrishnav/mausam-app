@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { App as CapApp } from '@capacitor/app';
 import { BottomNavigation } from './components/layout/BottomNavigation';
@@ -21,6 +21,7 @@ import { ForecastScreen } from './pages/ForecastScreen';
 import { EnvironmentScreen } from './pages/EnvironmentScreen';
 import { MapScreen } from './pages/MapScreen';
 import { AssistantScreen } from './pages/AssistantScreen';
+import { TrainingDashboardScreen } from './pages/TrainingDashboardScreen';
 import { SatelliteScreen } from './pages/SatelliteScreen';
 
 import { AlertsScreen } from './pages/alerts/AlertsScreen';
@@ -37,6 +38,7 @@ import { SettingsScreen } from './pages/settings/SettingsScreen';
 import { EditProfileScreen } from './pages/settings/EditProfileScreen';
 import { ManagePersonasScreen } from './pages/settings/ManagePersonasScreen';
 import { ChangePasswordScreen } from './pages/settings/ChangePasswordScreen';
+import { LanguageSelectModal } from './components/common/LanguageSelectModal';
 
 // Native and OAuth Deep Linking & Session Sync Bridge
 const NativeAuthSync: React.FC = () => {
@@ -92,15 +94,38 @@ const NativeAuthSync: React.FC = () => {
 
 export function App() {
   const refreshWeather = useAppStore(state => state.refreshWeather);
+  const [isLangModalOpen, setIsLangModalOpen] = useState<boolean>(false);
+  const [isInitialPrompt, setIsInitialPrompt] = useState<boolean>(false);
 
   // Sync initial weather data
   useEffect(() => {
     refreshWeather();
   }, [refreshWeather]);
 
+  // Ask language preference at the beginning
+  useEffect(() => {
+    const hasChosen = localStorage.getItem('mausam_language_selected');
+    if (!hasChosen) {
+      setIsInitialPrompt(true);
+      setIsLangModalOpen(true);
+    }
+
+    const handleOpen = () => {
+      setIsInitialPrompt(false);
+      setIsLangModalOpen(true);
+    };
+    window.addEventListener('mausam:open_language_modal', handleOpen);
+    return () => window.removeEventListener('mausam:open_language_modal', handleOpen);
+  }, []);
+
   return (
     <Router>
       <NativeAuthSync />
+      <LanguageSelectModal 
+        isOpen={isLangModalOpen} 
+        onClose={() => setIsLangModalOpen(false)} 
+        isInitialPrompt={isInitialPrompt} 
+      />
       <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col justify-between select-none">
         <Routes>
           {/* Splash & Root */}
@@ -130,6 +155,9 @@ export function App() {
 
           {/* Specialized IMD Meteorological Products */}
           <Route path="/satellite" element={<SatelliteScreen />} />
+
+          {/* ML Training Dashboard */}
+          <Route path="/training-dashboard" element={<TrainingDashboardScreen />} />
 
           {/* Alerts & Warnings */}
           <Route path="/alerts" element={<AlertsScreen />} />

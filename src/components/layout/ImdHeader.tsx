@@ -12,16 +12,19 @@ import {
   Navigation,
   Loader2,
   SlidersHorizontal,
-  ChevronRight
+  ChevronRight,
+  Globe
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { DEFAULT_INDIAN_LOCATIONS, searchLocations, reverseGeocodeGps } from '../../services/weatherApi';
 import { SavedLocation } from '../../types';
 import { useSafeClerk } from '../auth/useSafeClerk';
 import { getCleanDisplayName, getInitials } from '../../utils/userUtils';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export const ImdHeader: React.FC = () => {
   const navigate = useNavigate();
+  const { t, currentLanguageItem } = useTranslation();
   const { currentLocation, setCurrentLocation, refreshWeather, isLoadingWeather, setLiveGpsEnabled, user, isAuthenticated } = useAppStore();
   const { user: clerkUser } = useSafeClerk();
   const displayName = getCleanDisplayName(user, clerkUser);
@@ -163,27 +166,38 @@ export const ImdHeader: React.FC = () => {
           <div className="flex flex-col min-w-0 pr-1">
             <div className="flex items-center gap-1.5">
               <span className="text-xs sm:text-sm font-black tracking-tight text-white leading-none">
-                MAUSAM
+                {t('app_title', 'MAUSAM')}
               </span>
               <span className="px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[8px] sm:text-[9px] font-black rounded uppercase tracking-wider shrink-0">
                 IMD PRO
               </span>
             </div>
             <span className="text-[9px] sm:text-[10px] text-sky-200 font-semibold tracking-tight mt-0.5 leading-none truncate max-w-[150px] xs:max-w-none">
-              INDIA METEOROLOGICAL DEPT
+              {t('imd_dept', 'INDIA METEOROLOGICAL DEPT')}
             </span>
             <span className="text-[8px] text-slate-300 uppercase tracking-tight leading-none mt-0.5 truncate hidden xs:block">
-              Ministry of Earth Sciences • Govt of India
+              {t('gov_subtitle', 'Ministry of Earth Sciences • Govt of India')}
             </span>
           </div>
         </div>
 
         {/* Action icons & Auth Controls */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* Quick Language Selector Pill */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('mausam:open_language_modal'))}
+            className="flex items-center gap-1 px-2 py-1 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-all border border-white/20 active:scale-95 text-[10px] font-extrabold shadow-xs cursor-pointer"
+            title="Change Language / भाषा बदलें / மொழியை மாற்றவும்"
+            aria-label="Language Selector"
+          >
+            <Globe className="w-3.5 h-3.5 text-amber-300" />
+            <span className="text-amber-200">{currentLanguageItem.code}</span>
+          </button>
+
           <button
             onClick={() => refreshWeather()}
             disabled={isLoadingWeather}
-            className="p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 active:scale-95"
+            className="p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 active:scale-95 cursor-pointer"
             title="Refresh Live Station Observation"
             aria-label="Refresh"
           >

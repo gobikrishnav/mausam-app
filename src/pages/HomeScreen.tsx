@@ -22,6 +22,7 @@ import { ImdFeatureGrid } from '../components/weather/ImdFeatureGrid';
 import { PersonaWeatherCard } from '../components/weather/PersonaWeatherCard';
 import { SevereAlertBanner } from '../components/weather/SevereAlertBanner';
 import { TutorialOverlay } from '../components/weather/TutorialOverlay';
+import { PersonaType } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { generateSmartBrief } from '../services/aiService';
 import { runOfflineMlPersonalization } from '../services/mlPersonalizationEngine';
@@ -32,6 +33,7 @@ export const HomeScreen: React.FC = () => {
   const {
     user,
     currentLocation,
+    savedLocations,
     weather,
     hourly,
     daily,
@@ -50,6 +52,7 @@ export const HomeScreen: React.FC = () => {
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [showMlHubModal, setShowMlHubModal] = useState<boolean>(false);
   const [mlRefreshCount, setMlRefreshCount] = useState<number>(0);
+  const [activePersonaFilter, setActivePersonaFilter] = useState<PersonaType | 'all'>('all');
 
   // Audio Voice Weather Briefing (Web Speech API)
   const toggleSpeech = () => {
@@ -106,7 +109,7 @@ export const HomeScreen: React.FC = () => {
     }
   }, [weather, hourly, selectedPersonas, preferences, user?.fullName, currentLocation.name, airQuality]);
 
-  // Offline Machine Learning Personalization Model (M-AWPM v1.2)
+  // Offline Machine Learning Personalization Model (M-AWPM v2.0 with 8 dedicated ML models)
   const mlResult = useMemo(() => {
     if (!weather) return null;
     return runOfflineMlPersonalization({
@@ -117,8 +120,10 @@ export const HomeScreen: React.FC = () => {
       marine: marine || null,
       selectedPersonas,
       preferences,
+      stateName: currentLocation.region || currentLocation.name,
+      destinationName: currentLocation.name,
     });
-  }, [weather, hourly, daily, airQuality, marine, selectedPersonas, preferences, mlRefreshCount]);
+  }, [weather, hourly, daily, airQuality, marine, selectedPersonas, preferences, currentLocation.region, currentLocation.name, mlRefreshCount]);
 
   // On-Device Neural Network Inference with Backpropagation (M-BPNN v3.0)
   const neuralResult = useMemo(() => {
@@ -146,6 +151,27 @@ export const HomeScreen: React.FC = () => {
     const remaining = selectedPersonas.filter(p => !ranked.includes(p));
     return [...ranked, ...remaining];
   }, [neuralResult, mlResult, selectedPersonas]);
+
+  // Complete 8-persona catalog covering all user lifestyle segments
+  const allPersonasCatalog = useMemo<PersonaType[]>(() => [
+    'health', 
+    'fitness', 
+    'beachgoer', 
+    'traveler', 
+    'parent', 
+    'farmer', 
+    'commuter', 
+    'event_planner'
+  ], []);
+
+  // Filtered and prioritized personas for display
+  const displayedPersonas = useMemo(() => {
+    if (activePersonaFilter !== 'all') {
+      return [activePersonaFilter];
+    }
+    const combined = [...orderedPersonas, ...allPersonasCatalog];
+    return Array.from(new Set(combined));
+  }, [activePersonaFilter, orderedPersonas, allPersonasCatalog]);
 
   // Live Backpropagation Interactive Training Step
   const handleLiveTrainStep = () => {
@@ -318,11 +344,11 @@ export const HomeScreen: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[11px] font-bold uppercase tracking-wider">
-                Surface Meteorological Observation
+                Current Weather
               </span>
             </div>
-            <span className="text-[10px] font-mono text-amber-300 font-bold bg-black/30 px-2 py-0.5 rounded">
-              Station: {currentLocation.name} Met Obs
+            <span className="text-[10px] font-bold text-amber-300 bg-black/30 px-2 py-0.5 rounded">
+              {currentLocation.name}
             </span>
           </div>
 
@@ -479,14 +505,15 @@ export const HomeScreen: React.FC = () => {
                   </>
                 )}
               </button>
-              <span className="text-[9px] font-mono bg-white/10 px-2 py-0.5 rounded text-sky-200">
-                GPT-4o Intelligence
+              <span className="text-[9px] font-mono bg-white/10 px-2 py-0.5 rounded text-emerald-300 flex items-center gap-1" title="100% On-Device Neural Synthesis • Zero API Key">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Offline AI Engine
               </span>
             </div>
           </div>
 
           <p className="text-xs text-sky-100 font-serif italic leading-relaxed">
-            {loadingBrief ? 'Synthesizing actionable meteorological briefing...' : smartBrief || 'Conditions are stable across the district. Have a safe and productive day!'}
+            {loadingBrief ? 'Preparing your daily weather briefing...' : smartBrief || 'Conditions are stable across the district. Have a safe and productive day!'}
           </p>
 
           <div className="pt-2 border-t border-white/15 flex items-center justify-between">
@@ -506,13 +533,13 @@ export const HomeScreen: React.FC = () => {
           <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 p-3.5 space-y-2.5 shadow-sm">
             <div className="flex items-center justify-between px-1">
               <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-[#082046]">
-                Hourly Meteorological Trend
+                Hourly Forecast
               </h4>
               <button
                 onClick={() => navigate('/forecast')}
                 className="text-[11px] font-bold text-[#0E468A] hover:underline"
               >
-                7-Day Forecast & Rain Chart →
+                10-Day Forecast & Details →
               </button>
             </div>
 
@@ -601,8 +628,38 @@ export const HomeScreen: React.FC = () => {
             </div>
           )}
 
+          {/* Persona Lifestyle Filter Selector Bar */}
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            {[
+              { id: 'all' as const, label: '🌟 All Guides (8)' },
+              { id: 'health' as const, label: '🫀 Health & Allergy' },
+              { id: 'fitness' as const, label: '🏃 Outdoor Fitness' },
+              { id: 'beachgoer' as const, label: '🏄 Beach & Surf' },
+              { id: 'traveler' as const, label: '✈️ Traveler' },
+              { id: 'parent' as const, label: '👨‍👩‍👧 Parents & Kids' },
+              { id: 'farmer' as const, label: '🌾 Agriculture' },
+              { id: 'commuter' as const, label: '🚗 Daily Commute' },
+              { id: 'event_planner' as const, label: '🎪 Event Planner' },
+            ].map((tab) => {
+              const isSelected = activePersonaFilter === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActivePersonaFilter(tab.id)}
+                  className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                    isSelected
+                      ? 'bg-[#0E468A] text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
           {weather ? (
-            orderedPersonas.map((persona) => {
+            displayedPersonas.map((persona) => {
               const neuralScoreItem = neuralResult?.scores.find(s => s.persona === persona);
               const fallbackScore = mlResult?.rankedScores.find(s => s.persona === persona);
               const combinedScore = neuralScoreItem ? {
@@ -627,6 +684,8 @@ export const HomeScreen: React.FC = () => {
                   marine={marine}
                   preferences={preferences}
                   mlScore={combinedScore}
+                  savedLocations={savedLocations}
+                  stateName={currentLocation.region || currentLocation.name}
                   onFeedback={() => setMlRefreshCount(c => c + 1)}
                 />
               );
@@ -774,14 +833,24 @@ export const HomeScreen: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-5 py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between">
+            <div className="px-5 py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-2">
               <button
                 onClick={handleResetNeuralNet}
                 className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1"
                 title="Reset preferences to default"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Reset to Default</span>
+                <span>Reset</span>
+              </button>
+
+              <button
+                id="btn-view-training-report"
+                onClick={() => { setShowMlHubModal(false); navigate('/training-dashboard'); }}
+                className="text-[11px] text-emerald-300 hover:text-emerald-100 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-500/30 transition-colors"
+                title="View full ML training report with dataset statistics"
+              >
+                <BarChart2 className="w-3.5 h-3.5" />
+                <span>Training Report</span>
               </button>
 
               <button
@@ -790,16 +859,17 @@ export const HomeScreen: React.FC = () => {
                 title="Train backpropagation epoch"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Train Epoch (+1)</span>
+                <span>Train (+1)</span>
               </button>
 
               <button
                 onClick={() => setShowMlHubModal(false)}
-                className="px-5 py-2 rounded-xl bg-[#0E468A] hover:bg-[#082046] text-white text-xs font-bold transition-colors"
+                className="px-4 py-2 rounded-xl bg-[#0E468A] hover:bg-[#082046] text-white text-xs font-bold transition-colors"
               >
-                Close Guide
+                Close
               </button>
             </div>
+
           </div>
         </div>
       )}

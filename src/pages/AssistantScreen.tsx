@@ -189,8 +189,9 @@ export const AssistantScreen: React.FC = () => {
           <div>
             <h2 className="text-sm font-extrabold text-[#082046] flex items-center gap-1.5">
               Ask MAUSAM
-              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-blue-100 text-[#0E468A] font-bold">
-                GPT-4o
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold inline-flex items-center gap-1" title="100% Offline Intelligence • Zero API Key">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Offline AI
               </span>
             </h2>
             <span className="text-[10px] text-emerald-700 font-bold">● Active • {currentLocation.name}</span>

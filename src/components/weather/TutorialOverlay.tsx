@@ -9,7 +9,7 @@ const TUTORIAL_STEPS = [
   },
   {
     title: 'AI Smart Brief',
-    desc: 'Powered by GPT-4o, MAUSAM creates a personalized narrative each morning answering how today’s weather specifically impacts your chosen lifestyle.',
+    desc: 'Powered by 100% Offline AI, MAUSAM creates a personalized narrative each morning answering how today’s weather specifically impacts your chosen lifestyle without needing any API key.',
   },
   {
     title: 'Persona Weather Feed',

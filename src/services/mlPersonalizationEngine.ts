@@ -1,11 +1,24 @@
 import { AirQualityData, CurrentWeather, DailyForecast, HourlyForecast, MarineData, PersonaPreferences, PersonaType } from '../types';
+import { 
+  runAllPersonaMlAlgorithms,
+  MasterPersonaMlResults,
+  HealthMlPrediction,
+  FitnessMlPrediction,
+  BeachMlPrediction,
+  TravelMlPrediction,
+  ParentMlPrediction,
+  AgroMlPrediction,
+  CommuterMlPrediction,
+  EventMlPrediction
+} from './mlAlgorithmsEngine';
 
 /**
- * On-Device Offline Machine Learning Personalization Engine (M-AWPM)
- * MAUSAM Adaptive Weather Personalization Model v1.2
+ * On-Device Offline Machine Learning Personalization Engine (M-AWPM v2.0)
+ * MAUSAM Adaptive Weather Personalization Model
  * 
- * Runs 100% client-side with zero latency, zero cloud dependencies,
- * and adaptive user feedback learning.
+ * Powered by 8 Dedicated Machine Learning Algorithms synthesizing
+ * official Indian Government Datasets (IMD, CWC, ICAR, NDMA, CPCB).
+ * Runs 100% client-side with zero latency and adaptive reinforcement feedback.
  */
 
 export interface MlPersonaScore {
@@ -17,6 +30,8 @@ export interface MlPersonaScore {
   mlConfidence: number; // 85% - 99%
   actionWindow?: string;
   modelInferenceTimeMs: number;
+  mlAlgorithmName?: string;
+  mlMetrics?: any;
 }
 
 export interface MlPredictionResult {
@@ -26,9 +41,10 @@ export interface MlPredictionResult {
   discomfortIndex: number;
   evapotranspirationIndex: number;
   overallUrgency: 'normal' | 'advisory' | 'alert';
+  masterMlResults: MasterPersonaMlResults;
 }
 
-const STORAGE_KEY = 'mausam_offline_ml_weights';
+const STORAGE_KEY = 'mausam_offline_ml_weights_v2';
 
 // Default baseline feature weights learned from meteorological lifestyle datasets
 const DEFAULT_WEIGHTS: Record<PersonaType, number> = {
@@ -45,7 +61,7 @@ const DEFAULT_WEIGHTS: Record<PersonaType, number> = {
 /**
  * Retrieve adaptive online learning weights from local storage
  */
-function getLocalWeights(): Record<PersonaType, number> {
+export function getLocalWeights(): Record<PersonaType, number> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -65,9 +81,9 @@ export function recordMlFeedback(persona: PersonaType, signal: 'helpful' | 'enga
   const learningRate = 0.08;
 
   if (signal === 'helpful' || signal === 'engaged') {
-    weights[persona] = Math.min(2.0, weights[persona] + learningRate);
+    weights[persona] = Math.min(2.0, (weights[persona] || 1.0) + learningRate);
   } else if (signal === 'dismissed') {
-    weights[persona] = Math.max(0.4, weights[persona] - learningRate);
+    weights[persona] = Math.max(0.4, (weights[persona] || 1.0) - learningRate);
   }
 
   try {
@@ -81,14 +97,14 @@ export function recordMlFeedback(persona: PersonaType, signal: 'helpful' | 'enga
  * Calculate Thom's Discomfort Index (DI)
  * DI = T - 0.55 * (1 - 0.01 * RH) * (T - 14.5)
  */
-function calculateDiscomfortIndex(tempC: number, humidityPct: number): number {
+export function calculateDiscomfortIndex(tempC: number, humidityPct: number): number {
   return parseFloat((tempC - 0.55 * (1 - 0.01 * humidityPct) * (tempC - 14.5)).toFixed(1));
 }
 
 /**
  * Determine diurnal meteorological phase
  */
-function getDiurnalPhase(hour: number): 'morning' | 'afternoon' | 'evening' | 'night' {
+export function getDiurnalPhase(hour: number): 'morning' | 'afternoon' | 'evening' | 'night' {
   if (hour >= 5 && hour < 11) return 'morning';
   if (hour >= 11 && hour < 16) return 'afternoon';
   if (hour >= 16 && hour < 21) return 'evening';
@@ -106,225 +122,232 @@ export function runOfflineMlPersonalization(params: {
   marine?: MarineData | null;
   selectedPersonas: PersonaType[];
   preferences: PersonaPreferences;
+  stateName?: string;
+  destinationName?: string;
 }): MlPredictionResult {
   const startTime = performance.now();
-  const { weather, hourly, daily, airQuality, marine, selectedPersonas, preferences } = params;
+  const { weather, hourly, daily, airQuality, marine, selectedPersonas, preferences, stateName, destinationName } = params;
 
   const currentHour = new Date().getHours();
   const diurnalPhase = getDiurnalPhase(currentHour);
   const weights = getLocalWeights();
-
   const discomfortIndex = calculateDiscomfortIndex(weather.temperature, weather.humidity);
-  const next6HoursRain = hourly.length > 0
-    ? hourly.slice(0, 6).some(h => (Number(h.precipitationProbability) || 0) >= 40)
-    : (weather.precipitation > 0.5);
-  const maxRainProbNext6h = hourly.length > 0
-    ? Math.max(0, ...hourly.slice(0, 6).map(h => Number(h.precipitationProbability) || 0))
-    : (weather.precipitation > 0.5 ? 60 : 0);
-  const maxTempToday = daily[0]?.maxTemp || weather.temperature + 3;
-  const minTempToday = daily[0]?.minTemp || weather.temperature - 4;
-  const aqiVal = airQuality?.aqi || 65;
-  const uvVal = weather.uvIndex || 4;
+
+  // Execute all 8 Indian Govt-synthesized ML algorithms
+  const masterMlResults = runAllPersonaMlAlgorithms({
+    weather,
+    hourly,
+    daily,
+    airQuality,
+    marine,
+    preferences,
+    stateName,
+    destinationName
+  });
 
   const scores: MlPersonaScore[] = [];
 
-  // 1. FITNESS PERSONALIZATION MODEL
+  // 1. FITNESS PERSONALIZATION MODEL (Outdoor Workout & Heat Safety Guide)
   if (selectedPersonas.includes('fitness')) {
-    // Gaussian temperature comfort curve around 20°C
-    const tempComfort = Math.exp(-Math.pow(weather.temperature - 20, 2) / (2 * 36));
-    const timeBonus = (preferences.workoutTime === diurnalPhase) ? 20 : 5;
-    const aqiPenalty = aqiVal > 150 ? 40 : aqiVal > 100 ? 20 : 0;
-    const rainPenalty = next6HoursRain ? 30 : 0;
-    const uvPenalty = uvVal >= 8 ? 25 : 0;
+    const fitMl = masterMlResults.fitness;
+    let fitnessScore = Math.round(fitMl.optimalRunningScoreToday * (weights.fitness || 1.0));
+    fitnessScore = Math.max(10, Math.min(99, fitnessScore));
 
-    let fitnessScore = Math.max(10, Math.min(99, Math.round(tempComfort * 70 + timeBonus - aqiPenalty - rainPenalty - uvPenalty)));
-    fitnessScore = Math.round(fitnessScore * (weights.fitness || 1.0));
-
-    const urgency = (aqiVal > 180 || weather.temperature > 37 || next6HoursRain) ? 'warning' : fitnessScore > 75 ? 'optimal' : 'moderate';
-    const primaryFactor = next6HoursRain
-      ? 'Precipitation expected; switch to indoor training.'
-      : weather.temperature > 32
-      ? `High heat index (${weather.temperature}°C); hydrate heavily.`
-      : aqiVal > 120
-      ? `Elevated PM2.5 (AQI ${aqiVal}); avoid intense outdoor cardio.`
-      : 'Favorable thermal conditions for outdoor cardio.';
+    const urgency = fitMl.heatExertionRisk === 'Dangerous Heat - Stay Indoors' || fitMl.heatExertionRisk === 'High Heat - Slow Down'
+      ? 'warning'
+      : fitnessScore > 75 ? 'optimal' : 'moderate';
 
     scores.push({
       persona: 'fitness',
-      relevanceScore: Math.min(99, fitnessScore),
+      relevanceScore: fitnessScore,
       rankPosition: 0,
       urgency,
-      primaryFactor,
-      mlConfidence: 94,
-      actionWindow: diurnalPhase === 'morning' ? '6:00 AM – 8:30 AM' : '5:30 PM – 7:00 PM',
+      primaryFactor: fitMl.actionablePacingAdvice,
+      mlConfidence: fitMl.confidencePct,
+      actionWindow: fitMl.bestWorkoutWindow,
       modelInferenceTimeMs: parseFloat((performance.now() - startTime).toFixed(2)),
+      mlAlgorithmName: fitMl.algorithmName,
+      mlMetrics: fitMl
     });
   }
 
-  // 2. COMMUTER PERSONALIZATION MODEL
+  // 2. COMMUTER PERSONALIZATION MODEL (Daily Commute & Road Grip Guide)
   if (selectedPersonas.includes('commuter')) {
-    const isRushHour = (currentHour >= 8 && currentHour <= 10) || (currentHour >= 17 && currentHour <= 20);
-    const rainRisk = maxRainProbNext6h;
-    const fogRisk = weather.conditionText.toLowerCase().includes('fog') ? 35 : 0;
-    const windHazard = weather.windSpeed > 35 ? 20 : 0;
+    const comMl = masterMlResults.commuter;
+    let commuterScore = Math.round(
+      (20 + (comMl.estimatedDelayMinutes * 1.8) + (comMl.hydroplaningRiskIndex * 0.4)) * (weights.commuter || 1.0)
+    );
+    commuterScore = Math.max(10, Math.min(99, commuterScore));
 
-    let commuterScore = Math.round(30 + (isRushHour ? 30 : 10) + (rainRisk * 0.4) + fogRisk + windHazard);
-    commuterScore = Math.round(commuterScore * (weights.commuter || 1.0));
-
-    const urgency = (rainRisk > 60 || fogRisk > 0 || weather.windSpeed > 40) ? 'critical' : isRushHour ? 'warning' : 'moderate';
-    const primaryFactor = fogRisk > 0
-      ? 'Dense surface fog; horizontal visibility reduced on arterials.'
-      : rainRisk > 40
-      ? `Wet asphalt probability ${rainRisk}%; factor +15 min buffer.`
-      : 'Smooth highway visibility (>8km); clear transit flow.';
+    const urgency = comMl.estimatedDelayMinutes >= 25
+      ? 'critical'
+      : comMl.estimatedDelayMinutes >= 10 ? 'warning' : 'optimal';
 
     scores.push({
       persona: 'commuter',
-      relevanceScore: Math.min(99, commuterScore),
+      relevanceScore: commuterScore,
       rankPosition: 0,
       urgency,
-      primaryFactor,
-      mlConfidence: 96,
-      actionWindow: isRushHour ? 'Current Peak Window' : 'Next Transit Window: 5:00 PM',
+      primaryFactor: `${comMl.commuteImpactAdvisory}. ${comMl.recommendedDepartureShift}`,
+      mlConfidence: comMl.confidencePct,
+      actionWindow: comMl.recommendedDepartureShift,
       modelInferenceTimeMs: parseFloat((performance.now() - startTime).toFixed(2)),
+      mlAlgorithmName: comMl.algorithmName,
+      mlMetrics: comMl
     });
   }
 
-  // 3. FARMER / AGRO PERSONALIZATION MODEL
+  // 3. FARMER / AGRO MODEL (Farmer & Crop Water Guide)
   if (selectedPersonas.includes('farmer')) {
-    const frostRisk = minTempToday < 7;
-    const irrigationHold = maxRainProbNext6h > 40 || (daily[1]?.precipitationProbability || 0) > 50;
-    const heatStress = maxTempToday > 38;
+    const agroMl = masterMlResults.farmer;
+    let farmerScore = Math.round(
+      (40 + (agroMl.soilMoistureDeficitPct * 0.5) + (agroMl.pestFungalOutbreakRiskPct * 0.4)) * (weights.farmer || 1.0)
+    );
+    farmerScore = Math.max(15, Math.min(99, farmerScore));
 
-    let farmerScore = Math.round(50 + (irrigationHold ? 25 : 0) + (frostRisk ? 30 : 0) + (heatStress ? 20 : 0));
-    farmerScore = Math.round(farmerScore * (weights.farmer || 1.0));
-
-    const urgency = (frostRisk || irrigationHold || heatStress) ? 'warning' : 'optimal';
-    const primaryFactor = frostRisk
-      ? `Night temp dropping to ${minTempToday}°C. Frost mitigation advised.`
-      : irrigationHold
-      ? 'Rain showers imminent. Defer canal & drip irrigation.'
-      : 'Soil moisture stable under steady evapotranspiration.';
+    const urgency = agroMl.pestRiskCategory === 'Pest Warning Alert' || agroMl.precisionIrrigationAction === 'Drain Water from Fields'
+      ? 'critical'
+      : (agroMl.pestRiskCategory === 'High Pest Risk' || agroMl.soilMoistureDeficitPct > 25) ? 'warning' : 'optimal';
 
     scores.push({
       persona: 'farmer',
-      relevanceScore: Math.min(99, farmerScore),
+      relevanceScore: farmerScore,
       rankPosition: 0,
       urgency,
-      primaryFactor,
-      mlConfidence: 97,
-      actionWindow: '48h Agromet Window',
+      primaryFactor: `${agroMl.precisionIrrigationAction}. ${agroMl.icarCropPhenologyAdvice}`,
+      mlConfidence: agroMl.confidencePct,
+      actionWindow: agroMl.pesticideSprayWindowAllowed ? 'Safe to Spray Window: Calm Wind' : 'Hold Spraying (Rain or Wind Risk)',
       modelInferenceTimeMs: parseFloat((performance.now() - startTime).toFixed(2)),
+      mlAlgorithmName: agroMl.algorithmName,
+      mlMetrics: agroMl
     });
   }
 
-  // 4. HEALTH-CONSCIOUS MODEL
+  // 4. HEALTH-CONSCIOUS MODEL (Bayesian Multi-Pollutant Logistic Classifier)
   if (selectedPersonas.includes('health')) {
-    const pressureVolatility = Math.abs(weather.pressure - 1013);
-    const aqiHazard = aqiVal > 150 ? 45 : aqiVal > 80 ? 25 : 5;
-    const migraineTrigger = pressureVolatility > 6;
+    const healthMl = masterMlResults.health;
+    let healthScore = Math.round(
+      (25 + (healthMl.asthmaFlareRiskPct * 0.5) + (healthMl.cardiovascularHeatStrainIndex * 0.3)) * (weights.health || 1.0)
+    );
+    healthScore = Math.max(15, Math.min(99, healthScore));
 
-    let healthScore = Math.round(35 + aqiHazard + (migraineTrigger ? 25 : 0));
-    healthScore = Math.round(healthScore * (weights.health || 1.0));
-
-    const urgency = (aqiVal > 200 || migraineTrigger) ? 'critical' : aqiVal > 100 ? 'warning' : 'optimal';
-    const primaryFactor = aqiVal > 150
-      ? `AQI ${aqiVal} (Unhealthy). High PM2.5; N95 mask recommended outdoors.`
-      : migraineTrigger
-      ? `Barometric pressure shift (${weather.pressure} hPa); possible migraine trigger.`
-      : 'Air quality within manageable baseline limits.';
+    const urgency = healthMl.asthmaRiskCategory === 'Severe' || healthMl.n95MaskRecommended
+      ? 'critical'
+      : healthMl.asthmaRiskCategory === 'High' ? 'warning' : 'optimal';
 
     scores.push({
       persona: 'health',
-      relevanceScore: Math.min(99, healthScore),
+      relevanceScore: healthScore,
       rankPosition: 0,
       urgency,
-      primaryFactor,
-      mlConfidence: 95,
+      primaryFactor: healthMl.biometeorologicalTrigger,
+      mlConfidence: healthMl.confidencePct,
+      actionWindow: healthMl.safeOutdoorWindow,
       modelInferenceTimeMs: parseFloat((performance.now() - startTime).toFixed(2)),
+      mlAlgorithmName: healthMl.algorithmName,
+      mlMetrics: healthMl
     });
   }
 
-  // 5. PARENT & KIDS MODEL
+  // 5. PARENT & KIDS MODEL (Pediatric Commute & Exposure Decision Tree)
   if (selectedPersonas.includes('parent')) {
-    const safeWindow = diurnalPhase === 'evening' || (diurnalPhase === 'morning' && uvVal < 5);
-    let parentScore = Math.round(40 + (safeWindow ? 30 : 10) + (next6HoursRain ? 20 : 0));
-    parentScore = Math.round(parentScore * (weights.parent || 1.0));
+    const parentMl = masterMlResults.parent;
+    let parentScore = Math.round((100 - parentMl.schoolCommuteSafetyScore + 30) * (weights.parent || 1.0));
+    parentScore = Math.max(20, Math.min(99, parentScore));
+
+    const urgency = parentMl.pediatricExtremeAlert
+      ? 'critical'
+      : parentMl.schoolCommuteSafetyScore < 70 ? 'warning' : 'optimal';
 
     scores.push({
       persona: 'parent',
-      relevanceScore: Math.min(99, parentScore),
+      relevanceScore: parentScore,
       rankPosition: 0,
-      urgency: next6HoursRain ? 'warning' : 'optimal',
-      primaryFactor: next6HoursRain
-        ? 'Precipitation likely during return school hours.'
-        : 'Pleasant evening window for outdoor park activities.',
-      mlConfidence: 92,
-      actionWindow: '4:30 PM – 6:15 PM',
+      urgency,
+      primaryFactor: parentMl.childSafetyAdvisory,
+      mlConfidence: parentMl.confidencePct,
+      actionWindow: parentMl.safeOutdoorPlayWindow,
       modelInferenceTimeMs: parseFloat((performance.now() - startTime).toFixed(2)),
+      mlAlgorithmName: parentMl.algorithmName,
+      mlMetrics: parentMl
     });
   }
 
-  // 6. BEACHGOER MODEL
+  // 6. BEACHGOER & SURFERS MODEL (INCOIS-NDMA Hydrodynamic Rip Current Classifier)
   if (selectedPersonas.includes('beachgoer')) {
-    const waveH = marine?.waveHeight || 1.2;
-    const isDangerous = waveH > 2.0;
-    let beachScore = Math.round(30 + (waveH < 1.5 ? 40 : 15) + (uvVal > 7 ? 20 : 0));
-    beachScore = Math.round(beachScore * (weights.beachgoer || 1.0));
+    const beachMl = masterMlResults.beachgoer;
+    let beachScore = Math.round(
+      (25 + (beachMl.ripCurrentHazardIndex * 0.5) + (100 - beachMl.swimmingSafetyRatingPct) * 0.3) * (weights.beachgoer || 1.0)
+    );
+    beachScore = Math.max(15, Math.min(99, beachScore));
+
+    const urgency = beachMl.ripHazardTier === 'Extreme' || beachMl.ripHazardTier === 'High'
+      ? 'critical'
+      : beachMl.ripHazardTier === 'Moderate' ? 'warning' : 'optimal';
 
     scores.push({
       persona: 'beachgoer',
-      relevanceScore: Math.min(99, beachScore),
+      relevanceScore: beachScore,
       rankPosition: 0,
-      urgency: isDangerous ? 'critical' : 'optimal',
-      primaryFactor: isDangerous
-        ? `High ocean swells (${waveH}m); sea bathing discouraged.`
-        : `Safe wave height (${waveH}m) with gentle tides.`,
-      mlConfidence: 91,
-      actionWindow: 'Optimal: Before 11 AM or at Sunset',
+      urgency,
+      primaryFactor: beachMl.incoisSafetyAdvisory,
+      mlConfidence: beachMl.confidencePct,
+      actionWindow: beachMl.optimalTideWindow,
       modelInferenceTimeMs: parseFloat((performance.now() - startTime).toFixed(2)),
+      mlAlgorithmName: beachMl.algorithmName,
+      mlMetrics: beachMl
     });
   }
 
-  // 7. TRAVELER MODEL
+  // 7. TRAVELER MODEL (Inter-District Microclimate Ensemble)
   if (selectedPersonas.includes('traveler')) {
-    const diurnalDelta = maxTempToday - minTempToday;
-    let travelerScore = Math.round(35 + (diurnalDelta > 10 ? 30 : 10));
-    travelerScore = Math.round(travelerScore * (weights.traveler || 1.0));
+    const travelMl = masterMlResults.traveler;
+    let travelerScore = Math.round(
+      (30 + (travelMl.transitDisruptionScore * 0.5) + (travelMl.diurnalThermalVarianceC * 2)) * (weights.traveler || 1.0)
+    );
+    travelerScore = Math.max(20, Math.min(99, travelerScore));
+
+    const urgency = travelMl.flightTurbulenceRisk === 'Severe' || travelMl.transitDisruptionScore > 65
+      ? 'critical'
+      : travelMl.flightTurbulenceRisk === 'High' ? 'warning' : 'optimal';
 
     scores.push({
       persona: 'traveler',
-      relevanceScore: Math.min(99, travelerScore),
+      relevanceScore: travelerScore,
       rankPosition: 0,
-      urgency: diurnalDelta > 12 ? 'warning' : 'optimal',
-      primaryFactor: diurnalDelta > 10
-        ? `Wide temperature range (${minTempToday}°C to ${maxTempToday}°C); pack layers.`
-        : 'Stable transit and clear inter-district travel.',
-      mlConfidence: 93,
+      urgency,
+      primaryFactor: travelMl.travelSafetyAdvisory,
+      mlConfidence: travelMl.confidencePct,
+      actionWindow: `Transit Buffer: +${travelMl.interDistrictDelayBufferMin} min`,
       modelInferenceTimeMs: parseFloat((performance.now() - startTime).toFixed(2)),
+      mlAlgorithmName: travelMl.algorithmName,
+      mlMetrics: travelMl
     });
   }
 
-  // 8. EVENT PLANNER MODEL
+  // 8. EVENT PLANNER MODEL (Outdoor Event & Tent Safety Guide)
   if (selectedPersonas.includes('event_planner')) {
-    const rainProb = daily[0]?.precipitationProbability || 10;
-    const windHazard = weather.windSpeed > 30;
-    let eventScore = Math.round(40 + (rainProb > 40 || windHazard ? 45 : 10));
-    eventScore = Math.round(eventScore * (weights.event_planner || 1.0));
+    const evtMl = masterMlResults.event_planner;
+    let eventScore = Math.round(
+      (30 + (evtMl.eventDisruptionProbabilityPct * 0.5) + (100 - evtMl.guestThermalComfortIndex) * 0.3) * (weights.event_planner || 1.0)
+    );
+    eventScore = Math.max(15, Math.min(99, eventScore));
+
+    const urgency = evtMl.backupPlanActionRequired || evtMl.canopyStructuralSafetyStatus === 'High Wind Alert - Move Indoors'
+      ? 'critical'
+      : evtMl.canopyStructuralSafetyStatus === 'Tie Down Tents with Heavy Weights' ? 'warning' : 'optimal';
 
     scores.push({
       persona: 'event_planner',
-      relevanceScore: Math.min(99, eventScore),
+      relevanceScore: eventScore,
       rankPosition: 0,
-      urgency: (rainProb > 40 || windHazard) ? 'critical' : 'optimal',
-      primaryFactor: windHazard
-        ? `Wind gusts touching ${weather.windSpeed} km/h; reinforce outdoor structures.`
-        : rainProb > 40
-        ? `Precipitation risk ${rainProb}%; arrange weatherproof canopies.`
-        : 'Optimal canopy stability and minimal rain probability.',
-      mlConfidence: 94,
-      actionWindow: 'Best Window: 5:00 PM – 9:00 PM',
+      urgency,
+      primaryFactor: evtMl.eventPlanningAdvisory,
+      mlConfidence: evtMl.confidencePct,
+      actionWindow: evtMl.canopyStructuralSafetyStatus,
       modelInferenceTimeMs: parseFloat((performance.now() - startTime).toFixed(2)),
+      mlAlgorithmName: evtMl.algorithmName,
+      mlMetrics: evtMl
     });
   }
 
@@ -337,8 +360,8 @@ export function runOfflineMlPersonalization(params: {
   };
 
   scores.sort((a, b) => {
-    const weightA = urgencyWeights[a.urgency] + a.relevanceScore;
-    const weightB = urgencyWeights[b.urgency] + b.relevanceScore;
+    const weightA = (urgencyWeights[a.urgency] || 0) + a.relevanceScore;
+    const weightB = (urgencyWeights[b.urgency] || 0) + b.relevanceScore;
     return weightB - weightA;
   });
 
@@ -348,7 +371,7 @@ export function runOfflineMlPersonalization(params: {
 
   const top = scores[0];
   const topRecommendation = top
-    ? `Top ML Insight (${top.persona.toUpperCase()}): ${top.primaryFactor}`
+    ? `Top ML Advisory (${top.persona.toUpperCase()}): ${top.primaryFactor}`
     : 'Atmospheric stability verified across all active parameters.';
 
   const hasCritical = scores.some(s => s.urgency === 'critical');
@@ -359,7 +382,8 @@ export function runOfflineMlPersonalization(params: {
     topRecommendation,
     diurnalPhase,
     discomfortIndex,
-    evapotranspirationIndex: parseFloat(((weather.temperature * 0.04) + 1.2).toFixed(2)),
+    evapotranspirationIndex: masterMlResults.farmer.evapotranspirationMmPerDay,
     overallUrgency: hasCritical ? 'alert' : hasWarning ? 'advisory' : 'normal',
+    masterMlResults
   };
 }
