@@ -35,7 +35,11 @@ import {
   ShieldAlert,
   Sliders,
   TrendingUp,
-  Gauge
+  Gauge,
+  ArrowRightLeft,
+  CheckSquare,
+  Square,
+  Route
 } from 'lucide-react';
 import { 
   AirQualityData, 
@@ -94,6 +98,15 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
   const savedLocations = propsSavedLocations || storeSavedLocations;
   const [feedbackState, setFeedbackState] = useState<'helpful' | 'dismissed' | null>(null);
   const [selectedDestId, setSelectedDestId] = useState<string>('dest_london');
+  const [travelView, setTravelView] = useState<'overview' | 'forecast' | 'packing' | 'flight'>('overview');
+  const [commuterView, setCommuterView] = useState<'traffic' | 'timeline' | 'vehicle_safety'>('traffic');
+  const [beachView, setBeachView] = useState<'sea' | 'tides' | 'watersports'>('sea');
+  const [parentView, setParentView] = useState<'commute' | 'timeline' | 'checklist'>('commute');
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
+  const toggleCheckedItem = (id: string) => {
+    setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Dedicated Machine Learning Model Inferences
   const healthMl = useMemo(() => predictHealthRiskML({ weather, airQuality, hourly, stateName }), [weather, airQuality, hourly, stateName]);
@@ -417,63 +430,180 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
           </span>
         </div>
 
-        {/* PS 26076: Highlight Tide Timings */}
-        <div className="bg-cyan-50/70 p-2.5 rounded-2xl border border-cyan-100 flex items-center justify-between text-[11px]">
-          <div className="flex items-center gap-2 text-cyan-950 font-semibold">
-            <Clock className="w-3.5 h-3.5 text-cyan-700" />
-            <span>Tide Timings:</span>
-          </div>
-          <div className="flex items-center gap-2 text-[10px]">
-            <span className="bg-white text-cyan-900 px-2 py-0.5 rounded-lg border border-cyan-200 font-bold">
-              🌊 High Tide: {beachMl.highTideTime}
+        {/* Beach Waters & View Switcher Bar */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-bold text-slate-600 flex items-center gap-1 uppercase tracking-wider">
+              <Waves className="w-3 h-3 text-cyan-600" />
+              <span>Coastal Waters & Surf Dynamics</span>
             </span>
-            <span className="bg-white text-slate-700 px-2 py-0.5 rounded-lg border border-cyan-200 font-medium">
-              🏖️ Low Tide: {beachMl.lowTideTime}
-            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const views: ('sea' | 'tides' | 'watersports')[] = ['sea', 'tides', 'watersports'];
+                const nextIdx = (views.indexOf(beachView) + 1) % views.length;
+                setBeachView(views[nextIdx]);
+              }}
+              className="flex items-center gap-1 text-[9px] text-cyan-800 bg-cyan-50 hover:bg-cyan-100 px-2 py-0.5 rounded-full font-bold border border-cyan-200 transition-all active:scale-95 cursor-pointer shadow-xs"
+              title="Tap to switch between Sea & Swimming, Astronomical Tides, and Watersports"
+            >
+              <ArrowRightLeft className="w-2.5 h-2.5 text-cyan-700" />
+              <span>Tap to switch view</span>
+            </button>
+          </div>
+
+          {/* Interactive View Switcher Tabs */}
+          <div className="grid grid-cols-3 gap-1 p-0.5 bg-slate-100/90 rounded-xl mb-2">
+            {[
+              { id: 'sea', label: '🏖️ Sea & Swimming' },
+              { id: 'tides', label: '🌊 Tide Schedule' },
+              { id: 'watersports', label: '🏄 Surf & Marine' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setBeachView(tab.id as any)}
+                className={`py-1 rounded-lg text-[9px] font-bold transition-all text-center ${
+                  beachView === tab.id
+                    ? 'bg-white text-cyan-950 shadow-xs border border-cyan-200'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* PS 26076: Wave Height, Water Temperature, Sea Conditions & Swimming Safety */}
-        <div className="grid grid-cols-4 gap-2 text-center text-[10px]">
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <span className="text-[9px] text-slate-500 block uppercase font-medium">Wave Height</span>
-            <span className="text-xs font-black text-[#0E468A]">{beachMl.waveHeightM}m</span>
-            <span className="text-[9px] text-slate-400 block">{marine?.wavePeriod || 8.0}s Swell Period</span>
-          </div>
+        {/* VIEW 1: Sea & Swimming Overview */}
+        {beachView === 'sea' && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-4 gap-2 text-center text-[10px]">
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <span className="text-[9px] text-slate-500 block uppercase font-medium">Wave Height</span>
+                <span className="text-xs font-black text-[#0E468A]">{beachMl.waveHeightM}m</span>
+                <span className="text-[9px] text-slate-400 block">{marine?.wavePeriod || 8.0}s Swell</span>
+              </div>
 
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <span className="text-[9px] text-slate-500 block uppercase font-medium">Water Temp</span>
-            <span className="text-xs font-black text-cyan-700">{beachMl.waterTemperatureC}°C</span>
-            <span className="text-[9px] text-slate-400 block">{beachMl.waterTemperatureC >= 26 ? 'Warm Water' : 'Cool Water'}</span>
-          </div>
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <span className="text-[9px] text-slate-500 block uppercase font-medium">Water Temp</span>
+                <span className="text-xs font-black text-cyan-700">{beachMl.waterTemperatureC}°C</span>
+                <span className="text-[9px] text-slate-400 block">{beachMl.waterTemperatureC >= 26 ? 'Warm Water' : 'Cool Water'}</span>
+              </div>
 
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <span className="text-[9px] text-slate-500 block uppercase font-medium">Safe to Swim</span>
-            <span className="text-xs font-black text-emerald-700">{beachMl.swimmingSafetyRatingPct}%</span>
-            <span className="text-[9px] text-slate-400 block">{beachMl.swimmingSafetyRatingPct > 70 ? 'Safe & Calm' : 'Swim Near Flags'}</span>
-          </div>
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <span className="text-[9px] text-slate-500 block uppercase font-medium">Safe to Swim</span>
+                <span className="text-xs font-black text-emerald-700">{beachMl.swimmingSafetyRatingPct}%</span>
+                <span className="text-[9px] text-slate-400 block">{beachMl.swimmingSafetyRatingPct > 70 ? 'Safe & Calm' : 'Caution'}</span>
+              </div>
 
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <span className="text-[9px] text-slate-500 block uppercase font-medium">Sea Current</span>
-            <span className="text-xs font-black text-rose-600">{beachMl.ripHazardTier}</span>
-            <span className="text-[9px] text-slate-400 block">Current Pull</span>
-          </div>
-        </div>
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <span className="text-[9px] text-slate-500 block uppercase font-medium">Sea Current</span>
+                <span className="text-xs font-black text-rose-600">{beachMl.ripHazardTier}</span>
+                <span className="text-[9px] text-slate-400 block">Current Pull</span>
+              </div>
+            </div>
 
-        {/* PS 26076: Safe and Enjoyable Beach Activities */}
-        <div className="bg-cyan-50/60 p-2.5 rounded-2xl border border-cyan-100/80 space-y-1.5 text-[11px]">
-          <div className="flex items-center justify-between font-bold text-cyan-950">
-            <span>🏄 Activities: {beachMl.beachActivityRecommendation}</span>
-            <span className="text-[10px] text-cyan-800">Surfing: {beachMl.surfQualityGrade}</span>
+            <div className="bg-cyan-50/60 p-2.5 rounded-2xl border border-cyan-100/80 space-y-1.5 text-[11px]">
+              <div className="flex items-center justify-between font-bold text-cyan-950">
+                <span>🏄 Activities: {beachMl.beachActivityRecommendation}</span>
+                <span className="text-[10px] text-cyan-800">Surfing: {beachMl.surfQualityGrade}</span>
+              </div>
+              <p className="text-slate-600 text-[10px] leading-relaxed font-normal">
+                🌊 {beachMl.incoisSafetyAdvisory}
+              </p>
+              <div className="text-[10px] text-slate-500 font-medium pt-0.5 border-t border-cyan-200/50 flex items-center justify-between">
+                <span>🕒 <strong className="text-slate-700">Best Swimming Window:</strong> {beachMl.optimalTideWindow}</span>
+                <span>{beachMl.ndmaCoastalSurgeRisk}</span>
+              </div>
+            </div>
           </div>
-          <p className="text-slate-600 text-[10px] leading-relaxed font-normal">
-            🌊 {beachMl.incoisSafetyAdvisory}
-          </p>
-          <div className="text-[10px] text-slate-500 font-medium pt-0.5 border-t border-cyan-200/50 flex items-center justify-between">
-            <span>🕒 <strong className="text-slate-700">Best Swimming Window:</strong> {beachMl.optimalTideWindow}</span>
-            <span>{beachMl.ndmaCoastalSurgeRisk}</span>
+        )}
+
+        {/* VIEW 2: Astronomical Tide Schedule */}
+        {beachView === 'tides' && (
+          <div className="bg-cyan-50/70 p-2.5 rounded-2xl border border-cyan-100 space-y-2 text-[11px]">
+            <div className="flex items-center justify-between font-bold text-cyan-950">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-cyan-700" />
+                <span>Semi-Diurnal Tidal Schedule (INCOIS)</span>
+              </span>
+              <span className="text-[9px] bg-white text-cyan-900 px-2 py-0.5 rounded-full border border-cyan-200">
+                State: {stateName}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+              <div className="bg-white p-2 rounded-xl border border-cyan-100 space-y-1">
+                <span className="font-bold text-cyan-950 flex items-center gap-1">
+                  <span>🌊</span>
+                  <span>High Tide Phases</span>
+                </span>
+                <p className="text-cyan-900 font-extrabold text-xs">{beachMl.highTideTime}</p>
+                <span className="text-[8px] text-slate-500 block">Crest water height reaches peak</span>
+              </div>
+              <div className="bg-white p-2 rounded-xl border border-cyan-100 space-y-1">
+                <span className="font-bold text-slate-800 flex items-center gap-1">
+                  <span>🏖️</span>
+                  <span>Low Tide Phases</span>
+                </span>
+                <p className="text-emerald-800 font-extrabold text-xs">{beachMl.lowTideTime}</p>
+                <span className="text-[8px] text-slate-500 block">Wide sandy beach & gentle surf</span>
+              </div>
+            </div>
+            <div className="bg-white/80 p-2 rounded-xl border border-cyan-100 text-[10px] space-y-1">
+              <div className="flex items-center justify-between text-slate-700">
+                <span>🕒 <strong>Optimal Swimming Window:</strong></span>
+                <span className="font-bold text-cyan-900">{beachMl.optimalTideWindow}</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-600 pt-1 border-t border-cyan-100">
+                <span>🛡️ <strong>NDMA Coastal Tier:</strong></span>
+                <span className="font-bold text-slate-800">{beachMl.ndmaCoastalSurgeRisk}</span>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* VIEW 3: Watersports, Swell Energy & Rip Hazard */}
+        {beachView === 'watersports' && (
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 text-[11px] space-y-2">
+            <div className="flex items-center justify-between font-bold text-slate-900">
+              <span className="flex items-center gap-1.5">
+                <Waves className="w-3.5 h-3.5 text-cyan-600" />
+                <span>Marine Watersports & Rip Current Physics</span>
+              </span>
+              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                beachMl.ripHazardTier === 'Extreme' || beachMl.ripHazardTier === 'High'
+                  ? 'bg-rose-100 text-rose-800'
+                  : 'bg-emerald-100 text-emerald-800'
+              }`}>
+                Rip Hazard: {beachMl.ripHazardTier}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+              <div className="bg-white p-2 rounded-xl border border-slate-200">
+                <span className="text-[9px] text-slate-500 block">Surf Quality</span>
+                <span className="font-bold text-xs text-cyan-800">{beachMl.surfQualityGrade.split(' ')[0]}</span>
+                <span className="text-[8px] text-slate-400 block">{beachMl.surfQualityGrade}</span>
+              </div>
+              <div className="bg-white p-2 rounded-xl border border-slate-200">
+                <span className="text-[9px] text-slate-500 block">Wave Energy</span>
+                <span className="font-bold text-xs text-[#0E468A]">{beachMl.waveEnergyFluxKwm} kW/m</span>
+                <span className="text-[8px] text-slate-400 block">Nearshore Flux</span>
+              </div>
+              <div className="bg-white p-2 rounded-xl border border-slate-200">
+                <span className="text-[9px] text-slate-500 block">Rip Pull Index</span>
+                <span className="font-bold text-xs text-rose-600">{beachMl.ripCurrentHazardIndex}/100</span>
+                <span className="text-[8px] text-slate-400 block">Undertow Force</span>
+              </div>
+            </div>
+            <div className="bg-white p-2 rounded-xl border border-slate-100 text-[10px] text-slate-700 space-y-1">
+              <span className="font-semibold text-slate-900 block">Lifeguard Warning Advisory:</span>
+              <p className="text-[9px] text-slate-600 leading-relaxed">
+                {beachMl.incoisSafetyAdvisory}
+              </p>
+            </div>
+          </div>
+        )}
 
         {renderMlFooter(beachMl.algorithmName, beachMl.confidencePct)}
       </div>
@@ -520,9 +650,21 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
               <MapPin className="w-3 h-3 text-indigo-600" />
               <span>Quick Access Saved Destinations</span>
             </span>
-            <span className="text-[9px] text-indigo-700 font-semibold">Tap to switch view</span>
+            <button
+              type="button"
+              onClick={() => {
+                const views: ('overview' | 'forecast' | 'packing' | 'flight')[] = ['overview', 'forecast', 'packing', 'flight'];
+                const nextIdx = (views.indexOf(travelView) + 1) % views.length;
+                setTravelView(views[nextIdx]);
+              }}
+              className="flex items-center gap-1 text-[9px] text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-full font-bold border border-indigo-200 transition-all active:scale-95 cursor-pointer shadow-xs"
+              title="Tap to switch between Overview, 5-Day Forecast, Packing List, and Flight Radar"
+            >
+              <ArrowRightLeft className="w-2.5 h-2.5 text-indigo-600" />
+              <span>Tap to switch view</span>
+            </button>
           </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
             {destinations.map(d => {
               const isSelected = d.id === activeDest.id;
               return (
@@ -541,52 +683,209 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
               );
             })}
           </div>
+
+          {/* Interactive View Switcher Tabs */}
+          <div className="grid grid-cols-4 gap-1 p-0.5 bg-slate-100/90 rounded-xl mt-1">
+            {[
+              { id: 'overview', label: '📌 Overview' },
+              { id: 'forecast', label: '📅 5-Day Trend' },
+              { id: 'packing', label: '🧳 Packing List' },
+              { id: 'flight', label: '✈️ Flight Radar' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setTravelView(tab.id as any)}
+                className={`py-1 rounded-lg text-[9px] font-bold transition-all text-center ${
+                  travelView === tab.id
+                    ? 'bg-white text-indigo-900 shadow-xs border border-indigo-200'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Active Selected Destination Preview Card */}
-        <div className="bg-indigo-50/70 p-2.5 rounded-2xl border border-indigo-100 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="font-extrabold text-xs text-indigo-950">{activeDest.name}, {activeDest.countryOrState}</span>
-              <span className="text-[10px] text-slate-500 block">{activeDest.condition}</span>
+        {/* VIEW 1: Active Selected Destination Overview Card */}
+        {travelView === 'overview' && (
+          <div className="space-y-2">
+            <div className="bg-indigo-50/70 p-2.5 rounded-2xl border border-indigo-100 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-extrabold text-xs text-indigo-950">{activeDest.name}, {activeDest.countryOrState}</span>
+                  <span className="text-[10px] text-slate-500 block">{activeDest.condition}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-black text-indigo-900">{activeDest.tempC}°C</span>
+                  <span className="text-[9px] text-slate-500 block">Rain: {activeDest.rainProbPct}%</span>
+                </div>
+              </div>
+
+              {/* PS 26076: Packing suggestions (e.g., 'Carry a raincoat in London') */}
+              <div className="bg-white/90 p-2 rounded-xl border border-indigo-200/80 flex items-center gap-2">
+                <Luggage className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                <div className="text-[11px]">
+                  <span className="font-bold text-indigo-950">Packing Advice: </span>
+                  <span className="text-indigo-900 font-semibold underline decoration-indigo-300">
+                    "{activeDest.packingTip}"
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-              <span className="text-xs font-black text-indigo-900">{activeDest.tempC}°C</span>
-              <span className="text-[9px] text-slate-500 block">Rain: {activeDest.rainProbPct}%</span>
+
+            {/* Severe Weather Alerts for Flights */}
+            <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 text-[11px] space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                  <Plane className="w-3.5 h-3.5 text-[#0E468A]" />
+                  <span>{travelMl.flightSevereWeatherAlert}</span>
+                </span>
+                <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                  {activeDest.flightStatus}
+                </span>
+              </div>
+              <p className="text-slate-600 text-[10px] leading-relaxed">
+                💡 {travelMl.travelSafetyAdvisory}
+              </p>
+              <div className="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-200 flex items-center justify-between">
+                <span>🚗 Highway Delay Buffer: <strong>+{travelMl.interDistrictDelayBufferMin} min</strong></span>
+                <span>🌡️ Day vs Night Temp Spread: <strong>{travelMl.diurnalThermalVarianceC}°C</strong></span>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* PS 26076: Packing suggestions (e.g., 'Carry a raincoat in London') */}
-          <div className="bg-white/90 p-2 rounded-xl border border-indigo-200/80 flex items-center gap-2">
-            <Luggage className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-            <div className="text-[11px]">
-              <span className="font-bold text-indigo-950">Packing Advice: </span>
-              <span className="text-indigo-900 font-semibold underline decoration-indigo-300">
-                "{activeDest.packingTip}"
+        {/* VIEW 2: 5-Day Destination Microclimate Forecast */}
+        {travelView === 'forecast' && (
+          <div className="bg-indigo-50/60 p-2.5 rounded-2xl border border-indigo-100 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-indigo-950">
+                📅 5-Day Forecast for {activeDest.name}
+              </span>
+              <span className="text-[9px] text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200 font-semibold">
+                Rain Risk: {activeDest.rainProbPct}% Today
               </span>
             </div>
+            <div className="grid grid-cols-5 gap-1 text-center">
+              {[
+                { day: 'Today', max: activeDest.tempC, min: activeDest.tempC - 5, rain: activeDest.rainProbPct, cond: activeDest.condition.split(' ')[0] },
+                { day: 'Tomorrow', max: activeDest.tempC + 1, min: activeDest.tempC - 4, rain: Math.max(10, activeDest.rainProbPct - 15), cond: activeDest.rainProbPct > 40 ? 'Showers' : 'Partly' },
+                { day: 'Day 3', max: activeDest.tempC - 1, min: activeDest.tempC - 6, rain: Math.min(85, activeDest.rainProbPct + 12), cond: activeDest.rainProbPct > 50 ? 'Rain' : 'Sunny' },
+                { day: 'Day 4', max: activeDest.tempC + 2, min: activeDest.tempC - 3, rain: Math.max(5, activeDest.rainProbPct - 22), cond: 'Clear' },
+                { day: 'Day 5', max: activeDest.tempC, min: activeDest.tempC - 5, rain: Math.max(10, activeDest.rainProbPct - 8), cond: 'Breeze' },
+              ].map((f, i) => (
+                <div key={i} className="bg-white/90 p-1.5 rounded-xl border border-indigo-100">
+                  <span className="text-[9px] font-bold text-slate-600 block">{f.day}</span>
+                  <span className="text-xs font-black text-indigo-950 block">{f.max}°</span>
+                  <span className="text-[9px] text-slate-400 block">{f.min}°</span>
+                  <span className="text-[8px] text-blue-600 font-semibold block mt-0.5">💧{f.rain}%</span>
+                </div>
+              ))}
+            </div>
+            <div className="bg-white/80 p-2 rounded-xl border border-indigo-100 text-[10px] text-slate-700 flex items-center justify-between">
+              <span>🌡️ Peak Temperature: <strong>{activeDest.tempC + 2}°C</strong></span>
+              <span>🧥 Recommended: <strong>{activeDest.tempC < 18 ? 'Warm Jackets' : 'Light Cottons'}</strong></span>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* PS 26076: Severe Weather Alerts for Flights */}
-        <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 text-[11px] space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="font-bold text-slate-900 flex items-center gap-1.5">
-              <Plane className="w-3.5 h-3.5 text-[#0E468A]" />
-              <span>{travelMl.flightSevereWeatherAlert}</span>
-            </span>
-            <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-              {activeDest.flightStatus}
-            </span>
+        {/* VIEW 3: Smart Interactive Packing Checklist */}
+        {travelView === 'packing' && (
+          <div className="bg-indigo-50/60 p-2.5 rounded-2xl border border-indigo-100 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-indigo-950 flex items-center gap-1">
+                <Luggage className="w-3 h-3 text-indigo-600" />
+                <span>Packing Checklist for {activeDest.name}</span>
+              </span>
+              <span className="text-[9px] text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200 font-semibold">
+                Tap item to check
+              </span>
+            </div>
+            <div className="space-y-1 text-[11px]">
+              {[
+                { id: `${activeDest.id}_1`, text: activeDest.packingTip, tag: 'Must Carry', icon: '🧳' },
+                { id: `${activeDest.id}_2`, text: activeDest.rainProbPct > 40 ? 'Waterproof rain jacket & storm umbrella' : 'Breathable light cotton shirts', tag: 'Apparel', icon: activeDest.rainProbPct > 40 ? '☔' : '👕' },
+                { id: `${activeDest.id}_3`, text: activeDest.tempC < 18 ? 'Fleece-lined sweater or thermal inner' : 'Polarized UV sunglasses & sunscreen', tag: 'Comfort', icon: activeDest.tempC < 18 ? '🧥' : '🕶️' },
+                { id: `${activeDest.id}_4`, text: 'Comfortable walking shoes with anti-slip grip', tag: 'Footwear', icon: '👟' },
+                { id: `${activeDest.id}_5`, text: 'Universal travel power adapter & emergency meds', tag: 'Essentials', icon: '🔋' },
+              ].map(item => {
+                const isChecked = !!checkedItems[item.id];
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => toggleCheckedItem(item.id)}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl border text-left transition-all ${
+                      isChecked
+                        ? 'bg-emerald-50/80 border-emerald-300 text-emerald-900 line-through opacity-80'
+                        : 'bg-white border-indigo-100 text-slate-800 hover:border-indigo-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">{item.icon}</span>
+                      <span className="text-[10px] font-medium">{item.text}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-[8px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-semibold border border-indigo-100">
+                        {item.tag}
+                      </span>
+                      {isChecked ? (
+                        <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Square className="w-3.5 h-3.5 text-slate-300" />
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <p className="text-slate-600 text-[10px] leading-relaxed">
-            💡 {travelMl.travelSafetyAdvisory}
-          </p>
-          <div className="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-200 flex items-center justify-between">
-            <span>🚗 Highway Delay Buffer: <strong>+{travelMl.interDistrictDelayBufferMin} min</strong></span>
-            <span>🌡️ Day vs Night Temp Spread: <strong>{travelMl.diurnalThermalVarianceC}°C</strong></span>
+        )}
+
+        {/* VIEW 4: Flight & Highway Transit Route Radar */}
+        {travelView === 'flight' && (
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 text-[11px] space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                <Plane className="w-3.5 h-3.5 text-[#0E468A]" />
+                <span>Flight & Corridor Radar: {activeDest.name}</span>
+              </span>
+              <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                {activeDest.flightStatus}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+              <div className="bg-white p-2 rounded-xl border border-slate-200">
+                <span className="text-[9px] text-slate-500 block uppercase">Turbulence</span>
+                <span className={`font-bold text-xs ${travelMl.flightTurbulenceRisk === 'Severe' ? 'text-red-700' : travelMl.flightTurbulenceRisk === 'High' ? 'text-amber-700' : 'text-emerald-700'}`}>
+                  {travelMl.flightTurbulenceRisk} Risk
+                </span>
+                <span className="text-[8px] text-slate-400 block">Cruising Altitude</span>
+              </div>
+              <div className="bg-white p-2 rounded-xl border border-slate-200">
+                <span className="text-[9px] text-slate-500 block uppercase">Road Delay</span>
+                <span className="font-bold text-xs text-[#0E468A]">+{travelMl.interDistrictDelayBufferMin} min</span>
+                <span className="text-[8px] text-slate-400 block">Highway Buffer</span>
+              </div>
+              <div className="bg-white p-2 rounded-xl border border-slate-200">
+                <span className="text-[9px] text-slate-500 block uppercase">Day/Night ΔT</span>
+                <span className="font-bold text-xs text-indigo-700">{travelMl.diurnalThermalVarianceC}°C</span>
+                <span className="text-[8px] text-slate-400 block">Thermal Variance</span>
+              </div>
+            </div>
+            <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-1 text-[10px]">
+              <div className="font-bold text-slate-800 flex items-center gap-1">
+                <span>🛡️</span>
+                <span>{travelMl.flightSevereWeatherAlert}</span>
+              </div>
+              <p className="text-slate-600 text-[9px] leading-relaxed">
+                💡 {travelMl.travelSafetyAdvisory}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {renderMlFooter(travelMl.algorithmName, travelMl.confidencePct)}
       </div>
@@ -623,67 +922,199 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
           </span>
         </div>
 
-        {/* PS 26076: Emphasize School Commute Conditions & Rain Alerts */}
-        <div className="grid grid-cols-2 gap-2 text-[11px]">
-          <div className="bg-purple-50/70 p-2.5 rounded-2xl border border-purple-100 space-y-1">
-            <div className="flex items-center gap-1 font-bold text-purple-950 text-[10px]">
-              <Car className="w-3.5 h-3.5 text-purple-700" />
-              <span>School Commute Conditions</span>
+        {/* School Commute Routine & View Switcher Bar */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-bold text-slate-600 flex items-center gap-1 uppercase tracking-wider">
+              <Users className="w-3 h-3 text-purple-600" />
+              <span>School Commute Routine</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const views: ('commute' | 'timeline' | 'checklist')[] = ['commute', 'timeline', 'checklist'];
+                const nextIdx = (views.indexOf(parentView) + 1) % views.length;
+                setParentView(views[nextIdx]);
+              }}
+              className="flex items-center gap-1 text-[9px] text-purple-800 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded-full font-bold border border-purple-200 transition-all active:scale-95 cursor-pointer shadow-xs"
+              title="Tap to switch between Commute Status, School Day Timeline, and Kids Bag Checklist"
+            >
+              <ArrowRightLeft className="w-2.5 h-2.5 text-purple-700" />
+              <span>Tap to switch view</span>
+            </button>
+          </div>
+
+          {/* Interactive View Switcher Tabs */}
+          <div className="grid grid-cols-3 gap-1 p-0.5 bg-slate-100/90 rounded-xl mb-2">
+            {[
+              { id: 'commute', label: '🎒 Commute Status' },
+              { id: 'timeline', label: '⏰ School Timeline' },
+              { id: 'checklist', label: '📋 Kids Bag List' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setParentView(tab.id as any)}
+                className={`py-1 rounded-lg text-[9px] font-bold transition-all text-center ${
+                  parentView === tab.id
+                    ? 'bg-white text-purple-950 shadow-xs border border-purple-200'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* VIEW 1: Commute Status & Severe Weather Warnings */}
+        {parentView === 'commute' && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <div className="bg-purple-50/70 p-2.5 rounded-2xl border border-purple-100 space-y-1">
+                <div className="flex items-center gap-1 font-bold text-purple-950 text-[10px]">
+                  <Car className="w-3.5 h-3.5 text-purple-700" />
+                  <span>School Commute Conditions</span>
+                </div>
+                <p className="text-slate-700 text-[10px] leading-tight">
+                  {parentMl.schoolCommuteDetail}
+                </p>
+                <span className="text-[9px] font-bold text-purple-800 bg-white px-1.5 py-0.5 rounded border border-purple-200 inline-block mt-0.5">
+                  Safety Score: {parentMl.schoolCommuteSafetyScore}/100
+                </span>
+              </div>
+
+              <div className="bg-blue-50/70 p-2.5 rounded-2xl border border-blue-100 space-y-1">
+                <div className="flex items-center gap-1 font-bold text-blue-950 text-[10px]">
+                  <CloudRain className="w-3.5 h-3.5 text-blue-700" />
+                  <span>Commute Rain Alert</span>
+                </div>
+                <p className="text-slate-700 text-[10px] leading-tight">
+                  {parentMl.rainAlertMessage}
+                </p>
+                <span className="text-[9px] font-bold text-blue-800 bg-white px-1.5 py-0.5 rounded border border-blue-200 inline-block mt-0.5">
+                  Pickup Wetness: {weather.precipitation} mm
+                </span>
+              </div>
             </div>
-            <p className="text-slate-700 text-[10px] leading-tight">
-              {parentMl.schoolCommuteDetail}
-            </p>
-            <span className="text-[9px] font-bold text-purple-800 bg-white px-1.5 py-0.5 rounded border border-purple-200 inline-block mt-0.5">
-              Safety Score: {parentMl.schoolCommuteSafetyScore}/100
-            </span>
-          </div>
 
-          <div className="bg-blue-50/70 p-2.5 rounded-2xl border border-blue-100 space-y-1">
-            <div className="flex items-center gap-1 font-bold text-blue-950 text-[10px]">
-              <CloudRain className="w-3.5 h-3.5 text-blue-700" />
-              <span>Commute Rain Alert</span>
+            <div className="bg-amber-50/60 p-2.5 rounded-2xl border border-amber-200/80 space-y-1 text-[11px]">
+              <div className="flex items-center justify-between font-bold text-amber-950">
+                <span className="flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
+                  <span>{parentMl.severeWeatherWarning}</span>
+                </span>
+              </div>
+              <p className="text-slate-700 text-[10px] leading-relaxed">
+                👶 {parentMl.childSafetyAdvisory}
+              </p>
             </div>
-            <p className="text-slate-700 text-[10px] leading-tight">
-              {parentMl.rainAlertMessage}
-            </p>
-            <span className="text-[9px] font-bold text-blue-800 bg-white px-1.5 py-0.5 rounded border border-blue-200 inline-block mt-0.5">
-              Pickup Wetness: {weather.precipitation} mm
-            </span>
-          </div>
-        </div>
 
-        {/* PS 26076: Severe Weather Warnings */}
-        <div className="bg-amber-50/60 p-2.5 rounded-2xl border border-amber-200/80 space-y-1 text-[11px]">
-          <div className="flex items-center justify-between font-bold text-amber-950">
-            <span className="flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
-              <span>{parentMl.severeWeatherWarning}</span>
-            </span>
+            <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 space-y-1.5 text-[11px]">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 flex items-center gap-1">
+                  <CalendarCheck className="w-3.5 h-3.5 text-purple-700" />
+                  <span>Daily Routine Plan for Kids</span>
+                </span>
+                <span className="text-[10px] text-purple-800 font-semibold">
+                  {parentMl.sunscreenSpfRecommendation}
+                </span>
+              </div>
+              <p className="text-slate-600 text-[10px] leading-relaxed">
+                {parentMl.dailyRoutinePlan}
+              </p>
+              <div className="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-200 flex items-center justify-between">
+                <span>🕒 <strong className="text-slate-700">Best Outdoor Play:</strong> {parentMl.safeOutdoorPlayWindow}</span>
+                <span>Pediatric Comfort: <strong>{parentMl.pediatricThermalStrainTier}</strong></span>
+              </div>
+            </div>
           </div>
-          <p className="text-slate-700 text-[10px] leading-relaxed">
-            👶 {parentMl.childSafetyAdvisory}
-          </p>
-        </div>
+        )}
 
-        {/* PS 26076: Plan Daily Routines */}
-        <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 space-y-1.5 text-[11px]">
-          <div className="flex items-center justify-between">
-            <span className="font-bold text-slate-900 flex items-center gap-1">
-              <CalendarCheck className="w-3.5 h-3.5 text-purple-700" />
-              <span>Daily Routine Plan for Kids</span>
+        {/* VIEW 2: School Day Hourly Timeline */}
+        {parentView === 'timeline' && (
+          <div className="bg-purple-50/60 p-2.5 rounded-2xl border border-purple-100 space-y-2 text-[11px]">
+            <span className="text-[10px] font-bold text-purple-950 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-purple-700" />
+              <span>School Day Hourly Timeline</span>
             </span>
-            <span className="text-[10px] text-purple-800 font-semibold">
-              {parentMl.sunscreenSpfRecommendation}
-            </span>
+            <div className="space-y-1.5">
+              {[
+                { period: 'Morning Drop-off (7:30 - 8:30 AM)', status: parentMl.schoolCommuteCondition, icon: '🚌', advice: 'Keep an umbrella in school bag if rain probability exceeds 30%' },
+                { period: 'Lunch & Playground Recess (12:30 - 1:30 PM)', status: parentMl.pediatricThermalStrainTier, icon: '🏃', advice: `Playground window: ${parentMl.safeOutdoorPlayWindow}. ${parentMl.sunscreenSpfRecommendation}` },
+                { period: 'Afternoon Pickup (2:30 - 3:30 PM)', status: parentMl.rainAlertMessage.includes('clear') ? 'Smooth Pickup' : 'Wet Pickup Risk', icon: '🎒', advice: parentMl.childSafetyAdvisory },
+              ].map((slot, i) => (
+                <div key={i} className="bg-white/90 p-2 rounded-xl border border-purple-100 space-y-0.5">
+                  <div className="flex items-center justify-between font-bold text-slate-800 text-[10px]">
+                    <span className="flex items-center gap-1">
+                      <span>{slot.icon}</span>
+                      <span>{slot.period}</span>
+                    </span>
+                    <span className="text-purple-800 bg-purple-50 px-1.5 py-0.5 rounded text-[9px] border border-purple-200 font-semibold">
+                      {slot.status}
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-slate-600 italic pt-0.5 leading-tight">
+                    👉 {slot.advice}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-          <p className="text-slate-600 text-[10px] leading-relaxed">
-            {parentMl.dailyRoutinePlan}
-          </p>
-          <div className="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-200 flex items-center justify-between">
-            <span>🕒 <strong className="text-slate-700">Best Outdoor Play:</strong> {parentMl.safeOutdoorPlayWindow}</span>
-            <span>Pediatric Comfort: <strong>{parentMl.pediatricThermalStrainTier}</strong></span>
+        )}
+
+        {/* VIEW 3: Kids Weather Bag Checklist */}
+        {parentView === 'checklist' && (
+          <div className="bg-purple-50/60 p-2.5 rounded-2xl border border-purple-100 space-y-2 text-[11px]">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-purple-950 flex items-center gap-1">
+                <span>🎒</span>
+                <span>Kids School Bag Weather Checklist</span>
+              </span>
+              <span className="text-[9px] text-purple-700 bg-white px-2 py-0.5 rounded-full border border-purple-200 font-semibold">
+                Tap to check item
+              </span>
+            </div>
+            <div className="space-y-1">
+              {[
+                { id: 'kid_1', text: 'Compact umbrella or lightweight raincoat in side pocket', tag: 'Rain Gear', icon: '☔' },
+                { id: 'kid_2', text: 'Full insulated water bottle with electrolyte/lemon water', tag: 'Hydration', icon: '💧' },
+                { id: 'kid_3', text: 'Anti-pollution mask for morning school bus commute', tag: 'Health', icon: '😷' },
+                { id: 'kid_4', text: 'Light cardigan or zip-up sweatshirt for AC classroom', tag: 'Comfort', icon: '🧥' },
+                { id: 'kid_5', text: 'Sun protection cap for sports & physical education period', tag: 'Sun Care', icon: '🧢' },
+              ].map(item => {
+                const isChecked = !!checkedItems[item.id];
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => toggleCheckedItem(item.id)}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl border text-left transition-all ${
+                      isChecked
+                        ? 'bg-emerald-50/80 border-emerald-300 text-emerald-900 line-through opacity-80'
+                        : 'bg-white border-purple-100 text-slate-800 hover:border-purple-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">{item.icon}</span>
+                      <span className="text-[10px] font-medium">{item.text}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-[8px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-semibold border border-purple-100">
+                        {item.tag}
+                      </span>
+                      {isChecked ? (
+                        <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Square className="w-3.5 h-3.5 text-slate-300" />
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {renderMlFooter(parentMl.algorithmName, parentMl.confidencePct)}
       </div>
@@ -839,59 +1270,185 @@ export const PersonaWeatherCard: React.FC<PersonaCardProps> = ({
           </span>
         </div>
 
-        {/* PS 26076: Integrate Weather with Traffic Updates */}
-        <div className="bg-blue-50/70 p-2.5 rounded-2xl border border-blue-100 space-y-1 text-[11px]">
-          <div className="flex items-center justify-between font-bold text-[#082046]">
-            <span className="flex items-center gap-1.5">
-              <Car className="w-3.5 h-3.5 text-[#0E468A]" />
-              <span>{commuteMl.trafficUpdate}</span>
+        {/* Commute Route & View Switcher Bar */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-bold text-slate-600 flex items-center gap-1 uppercase tracking-wider">
+              <Route className="w-3 h-3 text-[#0E468A]" />
+              <span>Commute Route & Grip Intelligence</span>
             </span>
+            <button
+              type="button"
+              onClick={() => {
+                const views: ('traffic' | 'timeline' | 'vehicle_safety')[] = ['traffic', 'timeline', 'vehicle_safety'];
+                const nextIdx = (views.indexOf(commuterView) + 1) % views.length;
+                setCommuterView(views[nextIdx]);
+              }}
+              className="flex items-center gap-1 text-[9px] text-[#0E468A] bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full font-bold border border-blue-200 transition-all active:scale-95 cursor-pointer shadow-xs"
+              title="Tap to switch between Traffic & Grip, Rush-Hour Timeline, and Vehicle Safety"
+            >
+              <ArrowRightLeft className="w-2.5 h-2.5 text-[#0E468A]" />
+              <span>Tap to switch view</span>
+            </button>
           </div>
-          <p className="text-slate-600 text-[10px] leading-relaxed">
-            🚗 {commuteMl.commuteImpactAdvisory}
-          </p>
+
+          {/* Interactive View Switcher Tabs */}
+          <div className="grid grid-cols-3 gap-1 p-0.5 bg-slate-100/90 rounded-xl mb-2">
+            {[
+              { id: 'traffic', label: '🚗 Traffic & Grip' },
+              { id: 'timeline', label: '⏰ Rush Timeline' },
+              { id: 'vehicle_safety', label: '🛡️ Vehicle Safety' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setCommuterView(tab.id as any)}
+                className={`py-1 rounded-lg text-[9px] font-bold transition-all text-center ${
+                  commuterView === tab.id
+                    ? 'bg-white text-[#082046] shadow-xs border border-blue-200'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* PS 26076: Visibility Conditions & Storm/Fog Alerts */}
-        <div className="grid grid-cols-4 gap-2 text-center text-[10px]">
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <span className="text-[9px] text-slate-500 block uppercase font-medium">Visibility</span>
-            <span className="text-xs font-black text-[#0E468A]">{(weather.visibilityKm || 10).toFixed(1)} km</span>
-            <span className="text-[9px] text-slate-400 block">{commuteMl.fogVisibilityBand.split(' ')[0]}</span>
-          </div>
+        {/* VIEW 1: Traffic & Road Friction Grip */}
+        {commuterView === 'traffic' && (
+          <div className="space-y-2">
+            <div className="bg-blue-50/70 p-2.5 rounded-2xl border border-blue-100 space-y-1 text-[11px]">
+              <div className="flex items-center justify-between font-bold text-[#082046]">
+                <span className="flex items-center gap-1.5">
+                  <Car className="w-3.5 h-3.5 text-[#0E468A]" />
+                  <span>{commuteMl.trafficUpdate}</span>
+                </span>
+              </div>
+              <p className="text-slate-600 text-[10px] leading-relaxed">
+                🚗 {commuteMl.commuteImpactAdvisory}
+              </p>
+            </div>
 
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <span className="text-[9px] text-slate-500 block uppercase font-medium">Road Grip</span>
-            <span className="text-xs font-black text-slate-800">{commuteMl.roadFrictionCoefficient}</span>
-            <span className="text-[9px] text-slate-400 block">{commuteMl.roadSafetyStatus}</span>
-          </div>
+            <div className="grid grid-cols-4 gap-2 text-center text-[10px]">
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <span className="text-[9px] text-slate-500 block uppercase font-medium">Visibility</span>
+                <span className="text-xs font-black text-[#0E468A]">{(weather.visibilityKm || 10).toFixed(1)} km</span>
+                <span className="text-[9px] text-slate-400 block">{commuteMl.fogVisibilityBand.split(' ')[0]}</span>
+              </div>
 
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <span className="text-[9px] text-slate-500 block uppercase font-medium">Skid Risk</span>
-            <span className="text-xs font-black text-rose-600">{commuteMl.hydroplaningRiskIndex}/100</span>
-            <span className="text-[9px] text-slate-400 block">Water Pooling</span>
-          </div>
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <span className="text-[9px] text-slate-500 block uppercase font-medium">Road Grip</span>
+                <span className="text-xs font-black text-slate-800">{commuteMl.roadFrictionCoefficient}</span>
+                <span className="text-[9px] text-slate-400 block">{commuteMl.roadSafetyStatus}</span>
+              </div>
 
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <span className="text-[9px] text-slate-500 block uppercase font-medium">Rush Hour</span>
-            <span className="text-xs font-black text-amber-700">Active</span>
-            <span className="text-[9px] text-slate-400 block">Peak Lanes</span>
-          </div>
-        </div>
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <span className="text-[9px] text-slate-500 block uppercase font-medium">Skid Risk</span>
+                <span className="text-xs font-black text-rose-600">{commuteMl.hydroplaningRiskIndex}/100</span>
+                <span className="text-[9px] text-slate-400 block">Water Pooling</span>
+              </div>
 
-        {/* PS 26076: Alerts for Storms or Fog affecting travel */}
-        <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 space-y-1 text-[11px]">
-          <div className="flex items-center justify-between font-bold text-slate-900">
-            <span className="flex items-center gap-1.5">
-              <Eye className="w-3.5 h-3.5 text-indigo-600" />
-              <span>{commuteMl.stormOrFogAlert}</span>
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <span className="text-[9px] text-slate-500 block uppercase font-medium">Rush Hour</span>
+                <span className="text-xs font-black text-amber-700">Active</span>
+                <span className="text-[9px] text-slate-400 block">Peak Lanes</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 space-y-1 text-[11px]">
+              <div className="flex items-center justify-between font-bold text-slate-900">
+                <span className="flex items-center gap-1.5">
+                  <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>{commuteMl.stormOrFogAlert}</span>
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-600 font-medium pt-1 border-t border-slate-200 flex items-center justify-between">
+                <span>🕒 <strong className="text-slate-800">Departure Shift:</strong> {commuteMl.recommendedDepartureShift}</span>
+                <span>{commuteMl.visibilityConditionsText}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 2: Rush-Hour Timeline & Transit Corridor */}
+        {commuterView === 'timeline' && (
+          <div className="bg-blue-50/60 p-2.5 rounded-2xl border border-blue-100 space-y-2 text-[11px]">
+            <span className="text-[10px] font-bold text-[#082046] flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-[#0E468A]" />
+              <span>Today's Commute Route Timeline</span>
             </span>
+            <div className="space-y-1.5">
+              {[
+                { time: 'Morning Rush (7:30 - 9:30 AM)', condition: 'Peak Inflow', grip: commuteMl.roadSafetyStatus, delay: `+${commuteMl.estimatedDelayMinutes} min`, tip: 'Leave 15 min early to avoid bottlenecks' },
+                { time: 'Midday Travel (12:00 - 2:00 PM)', condition: 'Moderate Traffic', grip: 'Optimal Grip (µ 0.82)', delay: '+0 to 5 min', tip: 'Fastest highway corridor window' },
+                { time: 'Evening Return (5:30 - 8:00 PM)', condition: 'High Density Outflow', grip: commuteMl.roadFrictionCoefficient < 0.5 ? 'Slick Roads' : 'Steady Grip', delay: `+${Math.round(commuteMl.estimatedDelayMinutes * 1.2)} min`, tip: 'Keep headlights on and maintain safe braking buffer' },
+              ].map((slot, i) => (
+                <div key={i} className="bg-white/90 p-2 rounded-xl border border-blue-100 space-y-0.5">
+                  <div className="flex items-center justify-between font-bold text-slate-800 text-[10px]">
+                    <span>{slot.time}</span>
+                    <span className="text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded text-[9px] border border-indigo-100">
+                      {slot.delay}
+                    </span>
+                  </div>
+                  <div className="text-[9px] text-slate-500 flex items-center justify-between">
+                    <span>Flow: <strong>{slot.condition}</strong></span>
+                    <span>Road: <strong className="text-emerald-700">{slot.grip}</strong></span>
+                  </div>
+                  <p className="text-[9px] text-slate-600 italic pt-0.5">💡 {slot.tip}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="text-[10px] text-slate-600 font-medium pt-1 border-t border-slate-200 flex items-center justify-between">
-            <span>🕒 <strong className="text-slate-800">Departure Recommendation:</strong> {commuteMl.recommendedDepartureShift}</span>
-            <span>{commuteMl.visibilityConditionsText}</span>
+        )}
+
+        {/* VIEW 3: Vehicle Safety & Hydroplaning Guide */}
+        {commuterView === 'vehicle_safety' && (
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 text-[11px] space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                <span>Vehicle Grip & Braking Multiplier</span>
+              </span>
+              <span className="text-[9px] font-mono bg-white px-2 py-0.5 rounded-full border border-slate-200 font-bold text-slate-800">
+                Friction: µ {commuteMl.roadFrictionCoefficient}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+              <div className="bg-white p-2 rounded-xl border border-slate-200">
+                <span className="text-[9px] text-slate-500 block">Braking Distance</span>
+                <span className="font-bold text-xs text-rose-700">
+                  {commuteMl.roadFrictionCoefficient < 0.4 ? '3.2x Stop' : commuteMl.roadFrictionCoefficient < 0.6 ? '1.8x Stop' : '1.0x Normal'}
+                </span>
+                <span className="text-[8px] text-slate-400 block">Stopping Multiplier</span>
+              </div>
+              <div className="bg-white p-2 rounded-xl border border-slate-200">
+                <span className="text-[9px] text-slate-500 block">Hydroplaning</span>
+                <span className={`font-bold text-xs ${commuteMl.hydroplaningRiskIndex > 60 ? 'text-red-700' : commuteMl.hydroplaningRiskIndex > 30 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                  {commuteMl.hydroplaningRiskIndex > 60 ? 'Severe Risk' : commuteMl.hydroplaningRiskIndex > 30 ? 'Moderate' : 'Low Risk'}
+                </span>
+                <span className="text-[8px] text-slate-400 block">Surface Water</span>
+              </div>
+              <div className="bg-white p-2 rounded-xl border border-slate-200">
+                <span className="text-[9px] text-slate-500 block">Headlight Guidance</span>
+                <span className="font-bold text-xs text-[#0E468A]">
+                  {(weather.visibilityKm || 10) < 3 ? 'Fog Lamps ON' : 'Daylight Low'}
+                </span>
+                <span className="text-[8px] text-slate-400 block">{(weather.visibilityKm || 10).toFixed(1)} km View</span>
+              </div>
+            </div>
+            <div className="bg-white p-2 rounded-xl border border-slate-100 text-[10px] space-y-1 text-slate-700">
+              <div className="font-semibold text-slate-900">Safety Recommendation:</div>
+              <p className="text-[9px] text-slate-600 leading-tight">
+                {commuteMl.roadFrictionCoefficient < 0.4
+                  ? '⚠️ High risk of hydroplaning on highway turns. Reduce speed below 50 km/h and double your trailing distance.'
+                  : commuteMl.roadFrictionCoefficient < 0.6
+                  ? 'Wet asphalt detected. Avoid sudden braking and allow 2 extra car lengths when following buses or trucks.'
+                  : '✅ Roads are dry with optimal tire grip. Standard driving speeds and highway limits apply.'}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {renderMlFooter(commuteMl.algorithmName, commuteMl.confidencePct)}
       </div>
